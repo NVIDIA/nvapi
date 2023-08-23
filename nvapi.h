@@ -41,7 +41,7 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 //
-// Date: Mar 9, 2023 
+// Date: Apr 4, 2023 
 // File: nvapi.h
 //
 // NvAPI provides an interface to NVIDIA devices. This file contains the 
@@ -11008,6 +11008,41 @@ NVAPI_INTERFACE NvAPI_D3D9_BindSwapBarrier(IDirect3DDevice9 *pDevice,
                                            NvU32 barrier); 
 #endif //if defined(_D3D9_H_)
 
+//! \ingroup dx
+typedef enum
+{
+    NVAPI_VSYNC_DEFAULT,                    //!< Fall back to the default settings
+    NVAPI_VSYNC_OFF,                        //!< Force vertical sync off when performance is more important than image quality and for benchmarking" 
+    NVAPI_VSYNC_ON,                         //!< Force vertical sync on when image quality is more important than performance
+    NVAPI_VSYNC_ADAPTIVE,                   //!< Select adaptive to turn vertical sync on or off based on the frame rate. 
+                                            //!  Vertical sync will only be on for frame rates above the monitor refresh rate.
+    NVAPI_VSYNC_ADAPTIVE_HALF_REFRESH_RATE  //!<
+
+} NVAPI_VSYNC_MODE;
+
+
+#if defined(_D3D9_H_) || defined(__d3d10_h__) || defined(__d3d10_1_h__) || defined(__d3d11_h__) || defined(__d3d12_h__)
+///////////////////////////////////////////////////////////////////////////////
+//
+// FUNCTION NAME: NvAPI_D3D_SetVerticalSyncMode
+//
+//!   DESCRIPTION: This API set the vertical sync mode for the given device context.
+//!
+//! \param [in]    pDevice    The caller provides the device and can be either IDirect3DDevice9 or ID3D10Device or ID3D10Device1 or ID3D11Device.
+//! \param [in]    vsyncMode  The caller specifies the NVAPI_VSYNC_MODE to be set.
+//!
+//! SUPPORTED OS:  Windows Vista
+//!
+//!
+//! RETURN STATUS: This API can return any of the error codes enumerated in #NvAPI_Status. 
+//!                If there are return error codes with specific meaning for this API, they are listed below.
+//!
+//! \ingroup dx
+///////////////////////////////////////////////////////////////////////////////
+NVAPI_INTERFACE NvAPI_D3D_SetVerticalSyncMode(__in IUnknown *pDevice, __in NVAPI_VSYNC_MODE vsyncMode); 
+
+#endif //if defined(_D3D9_H_) || defined(__d3d10_h__) || defined(__d3d10_1_h__) || defined(__d3d11_h__) || defined(__d3d12_h__)
+
 #if defined(__d3d10_h__) || defined(__d3d10_1_h__) || defined(__d3d11_h__) || defined(__d3d12_h__)
 ///////////////////////////////////////////////////////////////////////////////
 //
@@ -17019,7 +17054,9 @@ typedef struct _NV_GET_SLEEP_STATUS_PARAMS
 {
     NvU32  version;                                       //!< (IN) Structure version
     NvBool bLowLatencyMode;                               //!< (OUT) Is low latency mode enabled?
-    NvU8   rsvd[128];                                     //!< (IN) Reserved. Must be set to 0s.
+    NvBool bFsVrr;                                        //!< (OUT) Is fullscreen VRR enabled?
+    NvBool bCplVsyncOn;                                   //!< (OUT) Is Control Panel overriding VSYNC ON?
+    NvU8   rsvd[126];                                     //!< (IN) Reserved. Must be set to 0s.
 } NV_GET_SLEEP_STATUS_PARAMS_V1;
 
 typedef NV_GET_SLEEP_STATUS_PARAMS_V1            NV_GET_SLEEP_STATUS_PARAMS;
@@ -17031,12 +17068,14 @@ typedef NV_GET_SLEEP_STATUS_PARAMS_V1            NV_GET_SLEEP_STATUS_PARAMS;
 //
 // FUNCTION NAME: NvAPI_D3D_GetSleepStatus
 //
-//!   DESCRIPTION: This function can be used to get the latest sleep status.
+//!   DESCRIPTION: This function can be used to get the latest sleep status:
 //!   bLowLatencyMode indicates whether low latency mode is currently
 //!   enabled in the driver.
 //!   Note that it may not always reflect the previously requested sleep mode,
 //!   as the feature may not be available on the platform, or the setting has
 //!   been overridden by the control panel, for example.
+//!   bFsVrr indicates fullscreen GSYNC or GSYNC Compatible mode.
+//!   bCplVsyncOn indicates Control Panel VSYNC ON override.
 //!
 //! \since Release: 455
 //! \param [in] pDev                          The target device.
@@ -17137,6 +17176,47 @@ NVAPI_INTERFACE NvAPI_D3D_SetSleepMode(__in IUnknown *pDev, __in NV_SET_SLEEP_MO
 //! \ingroup dx
 ///////////////////////////////////////////////////////////////////////////////
 NVAPI_INTERFACE NvAPI_D3D_Sleep(__in IUnknown *pDev);
+#endif //defined(__cplusplus) && (defined(_D3D9_H_) || defined(__d3d10_h__) || defined(__d3d10_1_h__) || defined(__d3d11_h__) || defined(__d3d12_h__))
+
+//! SUPPORTED OS:  Windows 10 and higher
+//!
+//! Used to send Reflex Sync data to UMD
+//! \ingroup dx
+typedef struct _NV_SET_REFLEX_SYNC_PARAMS
+{
+    NvU32  version;                                       //!< (IN) Structure version
+    NvU32  bEnable:1;                                     //!< (IN) Enable Reflex Sync
+    NvU32  bDisable:1;                                    //!< (IN) Disable Reflex Sync
+    NvU32  flagsRsvd:30;                                  //!< (IN) Reserved flag bits. Must be set to 0s.
+    NvU32  vblankIntervalUs;                              //!< (IN) Interval between VBLANKs in microseconds. (0 means N/A)
+    NvS32  timeInQueueUs;                                 //!< (IN) Amount of time in the completed frame queue. Can be negative. (0 means N/A)
+    NvU32  timeInQueueUsTarget;                           //!< (IN) Target amount of time in the completed frame queue. (0 means N/A)
+    NvU8   rsvd[28];                                      //!< (IN) Reserved. Must be set to 0s.
+} NV_SET_REFLEX_SYNC_PARAMS_V1;
+
+typedef NV_SET_REFLEX_SYNC_PARAMS_V1            NV_SET_REFLEX_SYNC_PARAMS;
+#define NV_SET_REFLEX_SYNC_PARAMS_VER1          MAKE_NVAPI_VERSION(NV_SET_REFLEX_SYNC_PARAMS_V1, 1)
+#define NV_SET_REFLEX_SYNC_PARAMS_VER           NV_SET_REFLEX_SYNC_PARAMS_VER1
+
+#if defined(__cplusplus) && (defined(_D3D9_H_) || defined(__d3d10_h__) || defined(__d3d10_1_h__) || defined(__d3d11_h__) || defined(__d3d12_h__))
+///////////////////////////////////////////////////////////////////////////////
+//
+// FUNCTION NAME: NvAPI_D3D_SetReflexSync
+//
+//!   DESCRIPTION: This function can be used to enable/disable Reflex Sync,
+//!   and to pass in essential data for the Reflex Sync operation.
+//!
+//! \since Release: 530
+//! \param [in] pDev                          The target device.
+//! \param [in] pSetReflexSyncParams          Reflex Sync params.
+//! SUPPORTED OS:  Windows 10 and higher
+//!
+//!
+//! \return This API can return any of the error codes enumerated in #NvAPI_Status.
+//!
+//! \ingroup dx
+///////////////////////////////////////////////////////////////////////////////
+NVAPI_INTERFACE NvAPI_D3D_SetReflexSync(__in IUnknown *pDev, __in NV_SET_REFLEX_SYNC_PARAMS *pSetReflexSyncParams);
 #endif //defined(__cplusplus) && (defined(_D3D9_H_) || defined(__d3d10_h__) || defined(__d3d10_1_h__) || defined(__d3d11_h__) || defined(__d3d12_h__))
 
 //! SUPPORTED OS:  Windows 7 and higher
@@ -18464,6 +18544,81 @@ NVAPI_INTERFACE NvAPI_D3D12_CreateCommittedRDMABuffer(
         __out void **ppRDMAAddress);
 
 #endif //defined(__cplusplus) && defined(__d3d12_h__)
+//! SUPPORTED OS:  Windows 10 and higher
+//!
+#if defined(__cplusplus) && defined(__d3d12_h__)
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// NVAPI DIRECT TYPE NAME: INvAPI_DirectD3D12GraphicsCommandList
+//
+///////////////////////////////////////////////////////////////////////////////
+class INvAPI_DirectD3D12GraphicsCommandList
+{
+public:
+    virtual bool IsValid() const = 0;
+    virtual ID3D12GraphicsCommandList* GetID3D12GraphicsCommandList() const = 0;
+
+    void DispatchGraphics(NvU32 numDispatches);
+    void SetMarker(void* pMarkerData, NvU32 markerSize);
+};
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// NVAPI DIRECT FUNCTION NAME: NvAPI_DirectD3D12GraphicsCommandList_Create
+//
+//!   DESCRIPTION: Create the NvAPI_DirectD3D12GraphicsCommandList handle.
+//!                This function must be called after ID3D12Device::CreateCommandList.
+//!
+//! \param [in]         pDXD3D12GraphicsCommandList             The ID3D12GraphicsCommandList
+//! \param [out]        ppReturnD3D12GraphicsCommandList        The corresponding NvAPI_DirectD3D12GraphicsCommandList handle
+//! SUPPORTED OS:  Windows 10 and higher
+//!
+//!
+//! \return This API can return any of the error codes enumerated in #NvAPI_Status. 
+//!
+//! \ingroup dx
+///////////////////////////////////////////////////////////////////////////////
+NVAPI_INTERFACE NvAPI_DirectD3D12GraphicsCommandList_Create(__in  ID3D12GraphicsCommandList              *pDXD3D12GraphicsCommandList, 
+                                                            __out INvAPI_DirectD3D12GraphicsCommandList **ppReturnD3D12GraphicsCommandList);
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// NVAPI DIRECT FUNCTION NAME: NvAPI_DirectD3D12GraphicsCommandList_Release
+//
+//!   DESCRIPTION: release the NvAPI_DirectD3D12GraphicsCommandList handle.
+//!
+//! \param [in]         pD3D12GraphicsCommandList               The NvAPI_DirectD3D12GraphicsCommandList handle to release
+//! SUPPORTED OS:  Windows 10 and higher
+//!
+//!
+//! \return This API can return any of the error codes enumerated in #NvAPI_Status. 
+//!
+//! \ingroup dx
+///////////////////////////////////////////////////////////////////////////////
+NVAPI_INTERFACE NvAPI_DirectD3D12GraphicsCommandList_Release(__in INvAPI_DirectD3D12GraphicsCommandList *pD3D12GraphicsCommandList);
+
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// NVAPI DIRECT FUNCTION NAME: NvAPI_DirectD3D12GraphicsCommandList_Reset
+//
+//!   DESCRIPTION: reset the NvAPI_DirectD3D12GraphicsCommandList handle.
+//!                This function must be called after ID3D12GraphicsCommandList::Reset() and before any other NvAPI_Direct 
+//!                function calls such as dispatchGraphics() etc.
+//!
+//! \param [in]         pD3D12GraphicsCommandList               The NvAPI_DirectD3D12GraphicsCommandList handle to reset
+//! SUPPORTED OS:  Windows 10 and higher
+//!
+//!
+//! \return This API can return any of the error codes enumerated in #NvAPI_Status. 
+//!
+//! \ingroup dx
+///////////////////////////////////////////////////////////////////////////////
+NVAPI_INTERFACE NvAPI_DirectD3D12GraphicsCommandList_Reset(__in INvAPI_DirectD3D12GraphicsCommandList *pD3D12GraphicsCommandList);
+#endif
+
+
 
 /////////////////////////////////////////////////////////////////////////
 // Video Input Output (VIO) API
