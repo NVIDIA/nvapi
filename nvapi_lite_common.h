@@ -409,6 +409,7 @@ typedef enum _NvAPI_Status
     NVAPI_NOT_PERMITTED                         = -240,    //!< Attempted operation is not permitted.
     NVAPI_CALLBACK_ALREADY_REGISTERED           = -241,    //!< The callback function has already been registered.
     NVAPI_CALLBACK_NOT_FOUND                    = -242,    //!< The callback function is not found or not registered.
+    NVAPI_INVALID_OUTPUT_WIRE_FORMAT            = -243,    //!< Invalid Wire Format for the VR HMD
 } NvAPI_Status;
 
 ///////////////////////////////////////////////////////////////////////////////
