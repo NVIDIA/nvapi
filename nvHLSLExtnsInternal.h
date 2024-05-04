@@ -1,6 +1,6 @@
- /************************************************************************************************************************************\
+R"( /************************************************************************************************************************************\
 |*                                                                                                                                    *|
-|*     Copyright © 2012 NVIDIA Corporation.  All rights reserved.                                                                     *|
+|*     Copyright ï¿½ 2012 NVIDIA Corporation.  All rights reserved.                                                                     *|
 |*                                                                                                                                    *|
 |*  NOTICE TO USER:                                                                                                                   *|
 |*                                                                                                                                    *|
@@ -376,7 +376,7 @@ uint __NvAtomicOpFP16x2(RWTexture3D<float2> uav, uint3 address, uint fp16x2Val, 
 // the returned value are the four fp16 values (.xyzw components) packed into uint2
 // Warning: Behaviour of these set of functions is undefined if the UAV is not 
 // of R16G16B16A16_FLOAT format (might result in app crash or TDR)
-
+)" R"(
 uint2 __NvAtomicOpFP16x2(RWTexture1D<float4> uav, uint address, uint2 fp16x2Val, uint atomicOpType)
 {
     __NvReferenceUAVForOp(uav);
@@ -765,3 +765,4 @@ int __NvShflGeneric(int val, uint srcLane, uint maskClampVal, out uint laneValid
     laneValid = asuint(g_NvidiaExt.IncrementCounter());
     return g_NvidiaExt.IncrementCounter();
 }
+)"
