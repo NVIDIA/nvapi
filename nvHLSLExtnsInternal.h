@@ -36,7 +36,7 @@ R"(/****************************************************************************
 // internal functions
 // Functions in this file are not expected to be called by apps directly
 
-#include "//nvShaderExtnEnums.h"
+#include "@nvShaderExtnEnums.h"
 
 struct NvShaderExtnStruct
 {
