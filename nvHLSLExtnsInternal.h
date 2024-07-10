@@ -1,6 +1,6 @@
- /************************************************************************************************************************************\
+R"(/************************************************************************************************************************************\
 |*                                                                                                                                    *|
-|*     Copyright © 2012 NVIDIA Corporation.  All rights reserved.                                                                     *|
+|*     Copyright c 2012 NVIDIA Corporation.  All rights reserved.                                                                     *|
 |*                                                                                                                                    *|
 |*  NOTICE TO USER:                                                                                                                   *|
 |*                                                                                                                                    *|
@@ -30,33 +30,33 @@
 |*  in the user documentation and internal comments to the code,                                                                      *|
 |*  the above Disclaimer (as applicable) and U.S. Government End Users Notice.                                                        *|
 |*                                                                                                                                    *|
- \************************************************************************************************************************************/
+\************************************************************************************************************************************/
 
 ////////////////////////// NVIDIA SHADER EXTENSIONS /////////////////
 // internal functions
 // Functions in this file are not expected to be called by apps directly
 
-#include "nvShaderExtnEnums.h"
+#include "@nvShaderExtnEnums.h"
 
 struct NvShaderExtnStruct
 {
-    uint   opcode;                  // opcode
-    uint   rid;                     // resource ID
-    uint   sid;                     // sampler ID
-            
-    uint4  dst1u;                   // destination operand 1 (for instructions that need extra destination operands)
-    uint4  src3u;                   // source operand 3
-    uint4  src4u;                   // source operand 4
-    uint4  src5u;                   // source operand 5
-            
-    uint4  src0u;                   // uint source operand  0
-    uint4  src1u;                   // uint source operand  0
-    uint4  src2u;                   // uint source operand  0
-    uint4  dst0u;                   // uint destination operand
-            
-    uint   markUavRef;              // the next store to UAV is fake and is used only to identify the uav slot
-    uint   numOutputsForIncCounter; // Used for output to IncrementCounter 
-    float  padding1[27];            // struct size: 256 bytes
+	uint   opcode;                  // opcode
+	uint   rid;                     // resource ID
+	uint   sid;                     // sampler ID
+
+	uint4  dst1u;                   // destination operand 1 (for instructions that need extra destination operands)
+	uint4  src3u;                   // source operand 3
+	uint4  src4u;                   // source operand 4
+	uint4  src5u;                   // source operand 5
+
+	uint4  src0u;                   // uint source operand  0
+	uint4  src1u;                   // uint source operand  0
+	uint4  src2u;                   // uint source operand  0
+	uint4  dst0u;                   // uint destination operand
+
+	uint   markUavRef;              // the next store to UAV is fake and is used only to identify the uav slot
+	uint   numOutputsForIncCounter; // Used for output to IncrementCounter 
+	float  padding1[27];            // struct size: 256 bytes
 };
 
 // RW structured buffer for Nvidia shader extensions
@@ -88,206 +88,206 @@ RWStructuredBuffer<NvShaderExtnStruct> g_NvidiaExt : register( NV_SHADER_EXTN_SL
 // we always set src2[4:0] to 11111 (0x1F), and set src2[12:8] as (32 - width)
 int __NvGetShflMaskFromWidth(uint width)
 {
-    return ((NV_WARP_SIZE - width) << 8) | 0x1F;
+	return ((NV_WARP_SIZE - width) << 8) | 0x1F;
 }
 
 //----------------------------------------------------------------------------//
 
 void __NvReferenceUAVForOp(RWByteAddressBuffer uav)
 {
-    uint index = g_NvidiaExt.IncrementCounter();
-    g_NvidiaExt[index].markUavRef = 1;
-    uav.Store(index, 0);
+	uint index = g_NvidiaExt.IncrementCounter();
+	g_NvidiaExt[index].markUavRef = 1;
+	uav.Store(index, 0);
 }
 
 void __NvReferenceUAVForOp(RWTexture1D<float2> uav)
 {
-    uint index = g_NvidiaExt.IncrementCounter();
-    g_NvidiaExt[index].markUavRef = 1;
-    uav[index] = float2(0,0);
+	uint index = g_NvidiaExt.IncrementCounter();
+	g_NvidiaExt[index].markUavRef = 1;
+	uav[index] = float2(0,0);
 }
 
 void __NvReferenceUAVForOp(RWTexture2D<float2> uav)
 {
-    uint index = g_NvidiaExt.IncrementCounter();
-    g_NvidiaExt[index].markUavRef = 1;
-    uav[uint2(index,index)] = float2(0,0);
+	uint index = g_NvidiaExt.IncrementCounter();
+	g_NvidiaExt[index].markUavRef = 1;
+	uav[uint2(index,index)] = float2(0,0);
 }
 
 void __NvReferenceUAVForOp(RWTexture3D<float2> uav)
 {
-    uint index = g_NvidiaExt.IncrementCounter();
-    g_NvidiaExt[index].markUavRef = 1;
-    uav[uint3(index,index,index)] = float2(0,0);
+	uint index = g_NvidiaExt.IncrementCounter();
+	g_NvidiaExt[index].markUavRef = 1;
+	uav[uint3(index,index,index)] = float2(0,0);
 }
 
 void __NvReferenceUAVForOp(RWTexture1D<float4> uav)
 {
-    uint index = g_NvidiaExt.IncrementCounter();
-    g_NvidiaExt[index].markUavRef = 1;
-    uav[index] = float4(0,0,0,0);
+	uint index = g_NvidiaExt.IncrementCounter();
+	g_NvidiaExt[index].markUavRef = 1;
+	uav[index] = float4(0,0,0,0);
 }
 
 void __NvReferenceUAVForOp(RWTexture2D<float4> uav)
 {
-    uint index = g_NvidiaExt.IncrementCounter();
-    g_NvidiaExt[index].markUavRef = 1;
-    uav[uint2(index,index)] = float4(0,0,0,0);
+	uint index = g_NvidiaExt.IncrementCounter();
+	g_NvidiaExt[index].markUavRef = 1;
+	uav[uint2(index,index)] = float4(0,0,0,0);
 }
 
 void __NvReferenceUAVForOp(RWTexture3D<float4> uav)
 {
-    uint index = g_NvidiaExt.IncrementCounter();
-    g_NvidiaExt[index].markUavRef = 1;
-    uav[uint3(index,index,index)] = float4(0,0,0,0);
+	uint index = g_NvidiaExt.IncrementCounter();
+	g_NvidiaExt[index].markUavRef = 1;
+	uav[uint3(index,index,index)] = float4(0,0,0,0);
 }
 
 void __NvReferenceUAVForOp(RWTexture1D<float> uav)
 {
-    uint index = g_NvidiaExt.IncrementCounter();
-    g_NvidiaExt[index].markUavRef = 1;
-    uav[index] = 0.0f;
+	uint index = g_NvidiaExt.IncrementCounter();
+	g_NvidiaExt[index].markUavRef = 1;
+	uav[index] = 0.0f;
 }
 
 void __NvReferenceUAVForOp(RWTexture2D<float> uav)
 {
-    uint index = g_NvidiaExt.IncrementCounter();
-    g_NvidiaExt[index].markUavRef = 1;
-    uav[uint2(index,index)] = 0.0f;
+	uint index = g_NvidiaExt.IncrementCounter();
+	g_NvidiaExt[index].markUavRef = 1;
+	uav[uint2(index,index)] = 0.0f;
 }
 
 void __NvReferenceUAVForOp(RWTexture3D<float> uav)
 {
-    uint index = g_NvidiaExt.IncrementCounter();
-    g_NvidiaExt[index].markUavRef = 1;
-    uav[uint3(index,index,index)] = 0.0f;
+	uint index = g_NvidiaExt.IncrementCounter();
+	g_NvidiaExt[index].markUavRef = 1;
+	uav[uint3(index,index,index)] = 0.0f;
 }
 
 
 void __NvReferenceUAVForOp(RWTexture1D<uint2> uav)
 {
-    uint index = g_NvidiaExt.IncrementCounter();
-    g_NvidiaExt[index].markUavRef = 1;
-    uav[index] = uint2(0,0);
+	uint index = g_NvidiaExt.IncrementCounter();
+	g_NvidiaExt[index].markUavRef = 1;
+	uav[index] = uint2(0,0);
 }
 
 void __NvReferenceUAVForOp(RWTexture2D<uint2> uav)
 {
-    uint index = g_NvidiaExt.IncrementCounter();
-    g_NvidiaExt[index].markUavRef = 1;
-    uav[uint2(index,index)] = uint2(0,0);
+	uint index = g_NvidiaExt.IncrementCounter();
+	g_NvidiaExt[index].markUavRef = 1;
+	uav[uint2(index,index)] = uint2(0,0);
 }
 
 void __NvReferenceUAVForOp(RWTexture3D<uint2> uav)
 {
-    uint index = g_NvidiaExt.IncrementCounter();
-    g_NvidiaExt[index].markUavRef = 1;
-    uav[uint3(index,index,index)] = uint2(0,0);
+	uint index = g_NvidiaExt.IncrementCounter();
+	g_NvidiaExt[index].markUavRef = 1;
+	uav[uint3(index,index,index)] = uint2(0,0);
 }
 
 void __NvReferenceUAVForOp(RWTexture1D<uint4> uav)
 {
-    uint index = g_NvidiaExt.IncrementCounter();
-    g_NvidiaExt[index].markUavRef = 1;
-    uav[index] = uint4(0,0,0,0);
+	uint index = g_NvidiaExt.IncrementCounter();
+	g_NvidiaExt[index].markUavRef = 1;
+	uav[index] = uint4(0,0,0,0);
 }
 
 void __NvReferenceUAVForOp(RWTexture2D<uint4> uav)
 {
-    uint index = g_NvidiaExt.IncrementCounter();
-    g_NvidiaExt[index].markUavRef = 1;
-    uav[uint2(index,index)] = uint4(0,0,0,0);
+	uint index = g_NvidiaExt.IncrementCounter();
+	g_NvidiaExt[index].markUavRef = 1;
+	uav[uint2(index,index)] = uint4(0,0,0,0);
 }
 
 void __NvReferenceUAVForOp(RWTexture3D<uint4> uav)
 {
-    uint index = g_NvidiaExt.IncrementCounter();
-    g_NvidiaExt[index].markUavRef = 1;
-    uav[uint3(index,index,index)] = uint4(0,0,0,0);
+	uint index = g_NvidiaExt.IncrementCounter();
+	g_NvidiaExt[index].markUavRef = 1;
+	uav[uint3(index,index,index)] = uint4(0,0,0,0);
 }
 
 void __NvReferenceUAVForOp(RWTexture1D<uint> uav)
 {
-    uint index = g_NvidiaExt.IncrementCounter();
-    g_NvidiaExt[index].markUavRef = 1;
-    uav[index] = 0;
+	uint index = g_NvidiaExt.IncrementCounter();
+	g_NvidiaExt[index].markUavRef = 1;
+	uav[index] = 0;
 }
 
 void __NvReferenceUAVForOp(RWTexture2D<uint> uav)
 {
-    uint index = g_NvidiaExt.IncrementCounter();
-    g_NvidiaExt[index].markUavRef = 1;
-    uav[uint2(index,index)] = 0;
+	uint index = g_NvidiaExt.IncrementCounter();
+	g_NvidiaExt[index].markUavRef = 1;
+	uav[uint2(index,index)] = 0;
 }
 
 void __NvReferenceUAVForOp(RWTexture3D<uint> uav)
 {
-    uint index = g_NvidiaExt.IncrementCounter();
-    g_NvidiaExt[index].markUavRef = 1;
-    uav[uint3(index,index,index)] = 0;
+	uint index = g_NvidiaExt.IncrementCounter();
+	g_NvidiaExt[index].markUavRef = 1;
+	uav[uint3(index,index,index)] = 0;
 }
 
 void __NvReferenceUAVForOp(RWTexture1D<int2> uav)
 {
-    uint index = g_NvidiaExt.IncrementCounter();
-    g_NvidiaExt[index].markUavRef = 1;
-    uav[index] = int2(0,0);
+	uint index = g_NvidiaExt.IncrementCounter();
+	g_NvidiaExt[index].markUavRef = 1;
+	uav[index] = int2(0,0);
 }
 
 void __NvReferenceUAVForOp(RWTexture2D<int2> uav)
 {
-    uint index = g_NvidiaExt.IncrementCounter();
-    g_NvidiaExt[index].markUavRef = 1;
-    uav[uint2(index,index)] = int2(0,0);
+	uint index = g_NvidiaExt.IncrementCounter();
+	g_NvidiaExt[index].markUavRef = 1;
+	uav[uint2(index,index)] = int2(0,0);
 }
 
 void __NvReferenceUAVForOp(RWTexture3D<int2> uav)
 {
-    uint index = g_NvidiaExt.IncrementCounter();
-    g_NvidiaExt[index].markUavRef = 1;
-    uav[uint3(index,index,index)] = int2(0,0);
+	uint index = g_NvidiaExt.IncrementCounter();
+	g_NvidiaExt[index].markUavRef = 1;
+	uav[uint3(index,index,index)] = int2(0,0);
 }
 
 void __NvReferenceUAVForOp(RWTexture1D<int4> uav)
 {
-    uint index = g_NvidiaExt.IncrementCounter();
-    g_NvidiaExt[index].markUavRef = 1;
-    uav[index] = int4(0,0,0,0);
+	uint index = g_NvidiaExt.IncrementCounter();
+	g_NvidiaExt[index].markUavRef = 1;
+	uav[index] = int4(0,0,0,0);
 }
 
 void __NvReferenceUAVForOp(RWTexture2D<int4> uav)
 {
-    uint index = g_NvidiaExt.IncrementCounter();
-    g_NvidiaExt[index].markUavRef = 1;
-    uav[uint2(index,index)] = int4(0,0,0,0);
+	uint index = g_NvidiaExt.IncrementCounter();
+	g_NvidiaExt[index].markUavRef = 1;
+	uav[uint2(index,index)] = int4(0,0,0,0);
 }
 
 void __NvReferenceUAVForOp(RWTexture3D<int4> uav)
 {
-    uint index = g_NvidiaExt.IncrementCounter();
-    g_NvidiaExt[index].markUavRef = 1;
-    uav[uint3(index,index,index)] = int4(0,0,0,0);
+	uint index = g_NvidiaExt.IncrementCounter();
+	g_NvidiaExt[index].markUavRef = 1;
+	uav[uint3(index,index,index)] = int4(0,0,0,0);
 }
 
 void __NvReferenceUAVForOp(RWTexture1D<int> uav)
 {
-    uint index = g_NvidiaExt.IncrementCounter();
-    g_NvidiaExt[index].markUavRef = 1;
-    uav[index] = 0;
+	uint index = g_NvidiaExt.IncrementCounter();
+	g_NvidiaExt[index].markUavRef = 1;
+	uav[index] = 0;
 }
 
 void __NvReferenceUAVForOp(RWTexture2D<int> uav)
 {
-    uint index = g_NvidiaExt.IncrementCounter();
-    g_NvidiaExt[index].markUavRef = 1;
-    uav[uint2(index,index)] = 0;
+	uint index = g_NvidiaExt.IncrementCounter();
+	g_NvidiaExt[index].markUavRef = 1;
+	uav[uint2(index,index)] = 0;
 }
 
 void __NvReferenceUAVForOp(RWTexture3D<int> uav)
 {
-    uint index = g_NvidiaExt.IncrementCounter();
-    g_NvidiaExt[index].markUavRef = 1;
-    uav[uint3(index,index,index)] = 0;
+	uint index = g_NvidiaExt.IncrementCounter();
+	g_NvidiaExt[index].markUavRef = 1;
+	uav[uint3(index,index,index)] = 0;
 }
 
 //----------------------------------------------------------------------------//
@@ -312,14 +312,14 @@ void __NvReferenceUAVForOp(RWTexture3D<int> uav)
 // the returned value are the two fp16 values packed into a single uint
 uint __NvAtomicOpFP16x2(RWByteAddressBuffer uav, uint byteAddress, uint fp16x2Val, uint atomicOpType)
 {
-    __NvReferenceUAVForOp(uav);
-    uint index = g_NvidiaExt.IncrementCounter();
-    g_NvidiaExt[index].src0u.x = byteAddress;
-    g_NvidiaExt[index].src1u.x = fp16x2Val;
-    g_NvidiaExt[index].src2u.x = atomicOpType;
-    g_NvidiaExt[index].opcode  = NV_EXTN_OP_FP16_ATOMIC;
+	__NvReferenceUAVForOp(uav);
+	uint index = g_NvidiaExt.IncrementCounter();
+	g_NvidiaExt[index].src0u.x = byteAddress;
+	g_NvidiaExt[index].src1u.x = fp16x2Val;
+	g_NvidiaExt[index].src2u.x = atomicOpType;
+	g_NvidiaExt[index].opcode  = NV_EXTN_OP_FP16_ATOMIC;
 
-    return g_NvidiaExt[index].dst0u.x;    
+	return g_NvidiaExt[index].dst0u.x;    
 }
 
 //----------------------------------------------------------------------------//
@@ -333,40 +333,40 @@ uint __NvAtomicOpFP16x2(RWByteAddressBuffer uav, uint byteAddress, uint fp16x2Va
 
 uint __NvAtomicOpFP16x2(RWTexture1D<float2> uav, uint address, uint fp16x2Val, uint atomicOpType)
 {
-    __NvReferenceUAVForOp(uav);
-    uint index = g_NvidiaExt.IncrementCounter();
-    g_NvidiaExt[index].src0u.x    = address;
-    g_NvidiaExt[index].src1u.x    = fp16x2Val;
-    g_NvidiaExt[index].src2u.x    = atomicOpType;
-    g_NvidiaExt[index].opcode     = NV_EXTN_OP_FP16_ATOMIC;
+	__NvReferenceUAVForOp(uav);
+	uint index = g_NvidiaExt.IncrementCounter();
+	g_NvidiaExt[index].src0u.x    = address;
+	g_NvidiaExt[index].src1u.x    = fp16x2Val;
+	g_NvidiaExt[index].src2u.x    = atomicOpType;
+	g_NvidiaExt[index].opcode     = NV_EXTN_OP_FP16_ATOMIC;
 
-    return g_NvidiaExt[index].dst0u.x;    
+	return g_NvidiaExt[index].dst0u.x;    
 }
 
 uint __NvAtomicOpFP16x2(RWTexture2D<float2> uav, uint2 address, uint fp16x2Val, uint atomicOpType)
 {
-    __NvReferenceUAVForOp(uav);
-    uint index = g_NvidiaExt.IncrementCounter();
-    g_NvidiaExt[index].src0u.xy   = address;
-    g_NvidiaExt[index].src1u.x    = fp16x2Val;
-    g_NvidiaExt[index].src2u.x    = atomicOpType;
-    g_NvidiaExt[index].opcode     = NV_EXTN_OP_FP16_ATOMIC;
+	__NvReferenceUAVForOp(uav);
+	uint index = g_NvidiaExt.IncrementCounter();
+	g_NvidiaExt[index].src0u.xy   = address;
+	g_NvidiaExt[index].src1u.x    = fp16x2Val;
+	g_NvidiaExt[index].src2u.x    = atomicOpType;
+	g_NvidiaExt[index].opcode     = NV_EXTN_OP_FP16_ATOMIC;
 
-    return g_NvidiaExt[index].dst0u.x;    
+	return g_NvidiaExt[index].dst0u.x;    
 }
 
 uint __NvAtomicOpFP16x2(RWTexture3D<float2> uav, uint3 address, uint fp16x2Val, uint atomicOpType)
 {
-    __NvReferenceUAVForOp(uav);
-    uint index = g_NvidiaExt.IncrementCounter();
-    g_NvidiaExt[index].src0u.xyz  = address;
-    g_NvidiaExt[index].src1u.x    = fp16x2Val;
-    g_NvidiaExt[index].src2u.x    = atomicOpType;
-    g_NvidiaExt[index].opcode     = NV_EXTN_OP_FP16_ATOMIC;
+	__NvReferenceUAVForOp(uav);
+	uint index = g_NvidiaExt.IncrementCounter();
+	g_NvidiaExt[index].src0u.xyz  = address;
+	g_NvidiaExt[index].src1u.x    = fp16x2Val;
+	g_NvidiaExt[index].src2u.x    = atomicOpType;
+	g_NvidiaExt[index].opcode     = NV_EXTN_OP_FP16_ATOMIC;
 
-    return g_NvidiaExt[index].dst0u.x;    
+	return g_NvidiaExt[index].dst0u.x;    
 }
-
+)" R"(
 //----------------------------------------------------------------------------//
 
 // performs Atomic operation on a R16G16B16A16_FLOAT UAV at the given address
@@ -379,94 +379,94 @@ uint __NvAtomicOpFP16x2(RWTexture3D<float2> uav, uint3 address, uint fp16x2Val, 
 
 uint2 __NvAtomicOpFP16x2(RWTexture1D<float4> uav, uint address, uint2 fp16x2Val, uint atomicOpType)
 {
-    __NvReferenceUAVForOp(uav);
+	__NvReferenceUAVForOp(uav);
 
-    // break it down into two fp16x2 atomic ops
-    uint2 retVal;
+	// break it down into two fp16x2 atomic ops
+	uint2 retVal;
 
-    // first op has x-coordinate = x * 2
-    uint index = g_NvidiaExt.IncrementCounter();
-    g_NvidiaExt[index].src0u.x    = address * 2;
-    g_NvidiaExt[index].src1u.x    = fp16x2Val.x;
-    g_NvidiaExt[index].src2u.x    = atomicOpType;
-    g_NvidiaExt[index].opcode     = NV_EXTN_OP_FP16_ATOMIC;
-    retVal.x = g_NvidiaExt[index].dst0u.x;
+	// first op has x-coordinate = x * 2
+	uint index = g_NvidiaExt.IncrementCounter();
+	g_NvidiaExt[index].src0u.x    = address * 2;
+	g_NvidiaExt[index].src1u.x    = fp16x2Val.x;
+	g_NvidiaExt[index].src2u.x    = atomicOpType;
+	g_NvidiaExt[index].opcode     = NV_EXTN_OP_FP16_ATOMIC;
+	retVal.x = g_NvidiaExt[index].dst0u.x;
 
-    // second op has x-coordinate = x * 2 + 1
-    index = g_NvidiaExt.IncrementCounter();
-    g_NvidiaExt[index].src0u.x    = address * 2 + 1;
-    g_NvidiaExt[index].src1u.x    = fp16x2Val.y;
-    g_NvidiaExt[index].src2u.x    = atomicOpType;
-    g_NvidiaExt[index].opcode     = NV_EXTN_OP_FP16_ATOMIC;
-    retVal.y = g_NvidiaExt[index].dst0u.x;
+	// second op has x-coordinate = x * 2 + 1
+	index = g_NvidiaExt.IncrementCounter();
+	g_NvidiaExt[index].src0u.x    = address * 2 + 1;
+	g_NvidiaExt[index].src1u.x    = fp16x2Val.y;
+	g_NvidiaExt[index].src2u.x    = atomicOpType;
+	g_NvidiaExt[index].opcode     = NV_EXTN_OP_FP16_ATOMIC;
+	retVal.y = g_NvidiaExt[index].dst0u.x;
 
-    return retVal;
+	return retVal;
 }
 
 uint2 __NvAtomicOpFP16x2(RWTexture2D<float4> uav, uint2 address, uint2 fp16x2Val, uint atomicOpType)
 {
-    __NvReferenceUAVForOp(uav);
+	__NvReferenceUAVForOp(uav);
 
-    // break it down into two fp16x2 atomic ops
-    uint2 retVal;
+	// break it down into two fp16x2 atomic ops
+	uint2 retVal;
 
-    // first op has x-coordinate = x * 2
-    uint2 addressTemp = uint2(address.x * 2, address.y);
-    uint index = g_NvidiaExt.IncrementCounter();
-    g_NvidiaExt[index].src0u.xy   = addressTemp;
-    g_NvidiaExt[index].src1u.x    = fp16x2Val.x;
-    g_NvidiaExt[index].src2u.x    = atomicOpType;
-    g_NvidiaExt[index].opcode     = NV_EXTN_OP_FP16_ATOMIC;
-    retVal.x = g_NvidiaExt[index].dst0u.x;
+	// first op has x-coordinate = x * 2
+	uint2 addressTemp = uint2(address.x * 2, address.y);
+	uint index = g_NvidiaExt.IncrementCounter();
+	g_NvidiaExt[index].src0u.xy   = addressTemp;
+	g_NvidiaExt[index].src1u.x    = fp16x2Val.x;
+	g_NvidiaExt[index].src2u.x    = atomicOpType;
+	g_NvidiaExt[index].opcode     = NV_EXTN_OP_FP16_ATOMIC;
+	retVal.x = g_NvidiaExt[index].dst0u.x;
 
-    // second op has x-coordinate = x * 2 + 1
-    addressTemp.x++;
-    index = g_NvidiaExt.IncrementCounter();
-    g_NvidiaExt[index].src0u.xy   = addressTemp;
-    g_NvidiaExt[index].src1u.x    = fp16x2Val.y;
-    g_NvidiaExt[index].src2u.x    = atomicOpType;
-    g_NvidiaExt[index].opcode     = NV_EXTN_OP_FP16_ATOMIC;
-    retVal.y = g_NvidiaExt[index].dst0u.x;
+	// second op has x-coordinate = x * 2 + 1
+	addressTemp.x++;
+	index = g_NvidiaExt.IncrementCounter();
+	g_NvidiaExt[index].src0u.xy   = addressTemp;
+	g_NvidiaExt[index].src1u.x    = fp16x2Val.y;
+	g_NvidiaExt[index].src2u.x    = atomicOpType;
+	g_NvidiaExt[index].opcode     = NV_EXTN_OP_FP16_ATOMIC;
+	retVal.y = g_NvidiaExt[index].dst0u.x;
 
-    return retVal;
+	return retVal;
 }
 
 uint2 __NvAtomicOpFP16x2(RWTexture3D<float4> uav, uint3 address, uint2 fp16x2Val, uint atomicOpType)
 {
-    __NvReferenceUAVForOp(uav);
+	__NvReferenceUAVForOp(uav);
 
-    // break it down into two fp16x2 atomic ops
-    uint2 retVal;
+	// break it down into two fp16x2 atomic ops
+	uint2 retVal;
 
-    // first op has x-coordinate = x * 2
-    uint3 addressTemp = uint3(address.x * 2, address.y, address.z);
-    uint index = g_NvidiaExt.IncrementCounter();
-    g_NvidiaExt[index].src0u.xyz  = addressTemp;
-    g_NvidiaExt[index].src1u.x    = fp16x2Val.x;
-    g_NvidiaExt[index].src2u.x    = atomicOpType;
-    g_NvidiaExt[index].opcode     = NV_EXTN_OP_FP16_ATOMIC;
-    retVal.x = g_NvidiaExt[index].dst0u.x;
+	// first op has x-coordinate = x * 2
+	uint3 addressTemp = uint3(address.x * 2, address.y, address.z);
+	uint index = g_NvidiaExt.IncrementCounter();
+	g_NvidiaExt[index].src0u.xyz  = addressTemp;
+	g_NvidiaExt[index].src1u.x    = fp16x2Val.x;
+	g_NvidiaExt[index].src2u.x    = atomicOpType;
+	g_NvidiaExt[index].opcode     = NV_EXTN_OP_FP16_ATOMIC;
+	retVal.x = g_NvidiaExt[index].dst0u.x;
 
-    // second op has x-coordinate = x * 2 + 1
-    addressTemp.x++;
-    index = g_NvidiaExt.IncrementCounter();
-    g_NvidiaExt[index].src0u.xyz  = addressTemp;
-    g_NvidiaExt[index].src1u.x    = fp16x2Val.y;
-    g_NvidiaExt[index].src2u.x    = atomicOpType;
-    g_NvidiaExt[index].opcode     = NV_EXTN_OP_FP16_ATOMIC;
-    retVal.y = g_NvidiaExt[index].dst0u.x;
+	// second op has x-coordinate = x * 2 + 1
+	addressTemp.x++;
+	index = g_NvidiaExt.IncrementCounter();
+	g_NvidiaExt[index].src0u.xyz  = addressTemp;
+	g_NvidiaExt[index].src1u.x    = fp16x2Val.y;
+	g_NvidiaExt[index].src2u.x    = atomicOpType;
+	g_NvidiaExt[index].opcode     = NV_EXTN_OP_FP16_ATOMIC;
+	retVal.y = g_NvidiaExt[index].dst0u.x;
 
-    return retVal;
+	return retVal;
 }
 
 uint __fp32x2Tofp16x2(float2 val)
 {
-    return (f32tof16(val.y)<<16) | f32tof16(val.x) ;
+	return (f32tof16(val.y)<<16) | f32tof16(val.x) ;
 }
 
 uint2 __fp32x4Tofp16x4(float4 val)
 {
-    return uint2( (f32tof16(val.y)<<16) | f32tof16(val.x), (f32tof16(val.w)<<16) | f32tof16(val.z) ) ;
+	return uint2( (f32tof16(val.y)<<16) | f32tof16(val.x), (f32tof16(val.w)<<16) | f32tof16(val.z) ) ;
 }
 
 //----------------------------------------------------------------------------//
@@ -477,50 +477,50 @@ uint2 __fp32x4Tofp16x4(float4 val)
 // byteAddress must be multiple of 4
 float __NvAtomicAddFP32(RWByteAddressBuffer uav, uint byteAddress, float val)
 {
-    __NvReferenceUAVForOp(uav);
-    uint index = g_NvidiaExt.IncrementCounter();
-    g_NvidiaExt[index].src0u.x = byteAddress;
-    g_NvidiaExt[index].src1u.x = asuint(val);   // passing as uint to make it more convinient for the driver to translate
-    g_NvidiaExt[index].src2u.x = NV_EXTN_ATOM_ADD;
-    g_NvidiaExt[index].opcode  = NV_EXTN_OP_FP32_ATOMIC;
+	__NvReferenceUAVForOp(uav);
+	uint index = g_NvidiaExt.IncrementCounter();
+	g_NvidiaExt[index].src0u.x = byteAddress;
+	g_NvidiaExt[index].src1u.x = asuint(val);   // passing as uint to make it more convinient for the driver to translate
+	g_NvidiaExt[index].src2u.x = NV_EXTN_ATOM_ADD;
+	g_NvidiaExt[index].opcode  = NV_EXTN_OP_FP32_ATOMIC;
 
-    return asfloat(g_NvidiaExt[index].dst0u.x);
+	return asfloat(g_NvidiaExt[index].dst0u.x);
 }
 
 float __NvAtomicAddFP32(RWTexture1D<float> uav, uint address, float val)
 {
-    __NvReferenceUAVForOp(uav);
-    uint index = g_NvidiaExt.IncrementCounter();
-    g_NvidiaExt[index].src0u.x    = address;
-    g_NvidiaExt[index].src1u.x    = asuint(val);
-    g_NvidiaExt[index].src2u.x    = NV_EXTN_ATOM_ADD;
-    g_NvidiaExt[index].opcode     = NV_EXTN_OP_FP32_ATOMIC;
+	__NvReferenceUAVForOp(uav);
+	uint index = g_NvidiaExt.IncrementCounter();
+	g_NvidiaExt[index].src0u.x    = address;
+	g_NvidiaExt[index].src1u.x    = asuint(val);
+	g_NvidiaExt[index].src2u.x    = NV_EXTN_ATOM_ADD;
+	g_NvidiaExt[index].opcode     = NV_EXTN_OP_FP32_ATOMIC;
 
-    return asfloat(g_NvidiaExt[index].dst0u.x);
+	return asfloat(g_NvidiaExt[index].dst0u.x);
 }
 
 float __NvAtomicAddFP32(RWTexture2D<float> uav, uint2 address, float val)
 {
-    __NvReferenceUAVForOp(uav);
-    uint index = g_NvidiaExt.IncrementCounter();
-    g_NvidiaExt[index].src0u.xy   = address;
-    g_NvidiaExt[index].src1u.x    = asuint(val);
-    g_NvidiaExt[index].src2u.x    = NV_EXTN_ATOM_ADD;
-    g_NvidiaExt[index].opcode     = NV_EXTN_OP_FP32_ATOMIC;
+	__NvReferenceUAVForOp(uav);
+	uint index = g_NvidiaExt.IncrementCounter();
+	g_NvidiaExt[index].src0u.xy   = address;
+	g_NvidiaExt[index].src1u.x    = asuint(val);
+	g_NvidiaExt[index].src2u.x    = NV_EXTN_ATOM_ADD;
+	g_NvidiaExt[index].opcode     = NV_EXTN_OP_FP32_ATOMIC;
 
-    return asfloat(g_NvidiaExt[index].dst0u.x);
+	return asfloat(g_NvidiaExt[index].dst0u.x);
 }
 
 float __NvAtomicAddFP32(RWTexture3D<float> uav, uint3 address, float val)
 {
-    __NvReferenceUAVForOp(uav);
-    uint index = g_NvidiaExt.IncrementCounter();
-    g_NvidiaExt[index].src0u.xyz  = address;
-    g_NvidiaExt[index].src1u.x    = asuint(val);
-    g_NvidiaExt[index].src2u.x    = NV_EXTN_ATOM_ADD;
-    g_NvidiaExt[index].opcode     = NV_EXTN_OP_FP32_ATOMIC;
+	__NvReferenceUAVForOp(uav);
+	uint index = g_NvidiaExt.IncrementCounter();
+	g_NvidiaExt[index].src0u.xyz  = address;
+	g_NvidiaExt[index].src1u.x    = asuint(val);
+	g_NvidiaExt[index].src2u.x    = NV_EXTN_ATOM_ADD;
+	g_NvidiaExt[index].opcode     = NV_EXTN_OP_FP32_ATOMIC;
 
-    return asfloat(g_NvidiaExt[index].dst0u.x);
+	return asfloat(g_NvidiaExt[index].dst0u.x);
 }
 
 //----------------------------------------------------------------------------//
@@ -533,235 +533,236 @@ float __NvAtomicAddFP32(RWTexture3D<float> uav, uint3 address, float val)
 
 uint2 __NvAtomicCompareExchangeUINT64(RWByteAddressBuffer uav, uint byteAddress, uint2 compareValue, uint2 value)
 {
-    __NvReferenceUAVForOp(uav);
+	__NvReferenceUAVForOp(uav);
 
-    uint index = g_NvidiaExt.IncrementCounter();
-    g_NvidiaExt[index].src0u.x  = byteAddress;
-    g_NvidiaExt[index].src1u.xy = compareValue;
-    g_NvidiaExt[index].src1u.zw = value;
-    g_NvidiaExt[index].src2u.x  = NV_EXTN_ATOM_CAS;
-    g_NvidiaExt[index].opcode   = NV_EXTN_OP_UINT64_ATOMIC;
+	uint index = g_NvidiaExt.IncrementCounter();
+	g_NvidiaExt[index].src0u.x  = byteAddress;
+	g_NvidiaExt[index].src1u.xy = compareValue;
+	g_NvidiaExt[index].src1u.zw = value;
+	g_NvidiaExt[index].src2u.x  = NV_EXTN_ATOM_CAS;
+	g_NvidiaExt[index].opcode   = NV_EXTN_OP_UINT64_ATOMIC;
 
-    return g_NvidiaExt[index].dst0u.xy;
+	return g_NvidiaExt[index].dst0u.xy;
 }
 
 uint2 __NvAtomicOpUINT64(RWByteAddressBuffer uav, uint byteAddress, uint2 value, uint atomicOpType)
 {
-    __NvReferenceUAVForOp(uav);
+	__NvReferenceUAVForOp(uav);
 
-    uint index = g_NvidiaExt.IncrementCounter();
-    g_NvidiaExt[index].src0u.x  = byteAddress;
-    g_NvidiaExt[index].src1u.xy = value;
-    g_NvidiaExt[index].src2u.x  = atomicOpType;
-    g_NvidiaExt[index].opcode   = NV_EXTN_OP_UINT64_ATOMIC;
+	uint index = g_NvidiaExt.IncrementCounter();
+	g_NvidiaExt[index].src0u.x  = byteAddress;
+	g_NvidiaExt[index].src1u.xy = value;
+	g_NvidiaExt[index].src2u.x  = atomicOpType;
+	g_NvidiaExt[index].opcode   = NV_EXTN_OP_UINT64_ATOMIC;
 
-    return g_NvidiaExt[index].dst0u.xy;
+	return g_NvidiaExt[index].dst0u.xy;
 }
 
 uint2 __NvAtomicCompareExchangeUINT64(RWTexture1D<uint2> uav, uint address, uint2 compareValue, uint2 value)
 {
-    __NvReferenceUAVForOp(uav);
+	__NvReferenceUAVForOp(uav);
 
-    uint index = g_NvidiaExt.IncrementCounter();
-    g_NvidiaExt[index].src0u.x  = address;
-    g_NvidiaExt[index].src1u.xy = compareValue;
-    g_NvidiaExt[index].src1u.zw = value;
-    g_NvidiaExt[index].src2u.x  = NV_EXTN_ATOM_CAS;
-    g_NvidiaExt[index].opcode   = NV_EXTN_OP_UINT64_ATOMIC;
+	uint index = g_NvidiaExt.IncrementCounter();
+	g_NvidiaExt[index].src0u.x  = address;
+	g_NvidiaExt[index].src1u.xy = compareValue;
+	g_NvidiaExt[index].src1u.zw = value;
+	g_NvidiaExt[index].src2u.x  = NV_EXTN_ATOM_CAS;
+	g_NvidiaExt[index].opcode   = NV_EXTN_OP_UINT64_ATOMIC;
 
-    return g_NvidiaExt[index].dst0u.xy;
+	return g_NvidiaExt[index].dst0u.xy;
 }
 
 uint2 __NvAtomicOpUINT64(RWTexture1D<uint2> uav, uint address, uint2 value, uint atomicOpType)
 {
-    __NvReferenceUAVForOp(uav);
+	__NvReferenceUAVForOp(uav);
 
-    uint index = g_NvidiaExt.IncrementCounter();
-    g_NvidiaExt[index].src0u.x  = address;
-    g_NvidiaExt[index].src1u.xy = value;
-    g_NvidiaExt[index].src2u.x  = atomicOpType;
-    g_NvidiaExt[index].opcode   = NV_EXTN_OP_UINT64_ATOMIC;
+	uint index = g_NvidiaExt.IncrementCounter();
+	g_NvidiaExt[index].src0u.x  = address;
+	g_NvidiaExt[index].src1u.xy = value;
+	g_NvidiaExt[index].src2u.x  = atomicOpType;
+	g_NvidiaExt[index].opcode   = NV_EXTN_OP_UINT64_ATOMIC;
 
-    return g_NvidiaExt[index].dst0u.xy;
+	return g_NvidiaExt[index].dst0u.xy;
 }
 
 uint2 __NvAtomicCompareExchangeUINT64(RWTexture2D<uint2> uav, uint2 address, uint2 compareValue, uint2 value)
 {
-    __NvReferenceUAVForOp(uav);
+	__NvReferenceUAVForOp(uav);
 
-    uint index = g_NvidiaExt.IncrementCounter();
-    g_NvidiaExt[index].src0u.xy  = address;
-    g_NvidiaExt[index].src1u.xy = compareValue;
-    g_NvidiaExt[index].src1u.zw = value;
-    g_NvidiaExt[index].src2u.x  = NV_EXTN_ATOM_CAS;
-    g_NvidiaExt[index].opcode   = NV_EXTN_OP_UINT64_ATOMIC;
+	uint index = g_NvidiaExt.IncrementCounter();
+	g_NvidiaExt[index].src0u.xy  = address;
+	g_NvidiaExt[index].src1u.xy = compareValue;
+	g_NvidiaExt[index].src1u.zw = value;
+	g_NvidiaExt[index].src2u.x  = NV_EXTN_ATOM_CAS;
+	g_NvidiaExt[index].opcode   = NV_EXTN_OP_UINT64_ATOMIC;
 
-    return g_NvidiaExt[index].dst0u.xy;
+	return g_NvidiaExt[index].dst0u.xy;
 }
 
 uint2 __NvAtomicOpUINT64(RWTexture2D<uint2> uav, uint2 address, uint2 value, uint atomicOpType)
 {
-    __NvReferenceUAVForOp(uav);
+	__NvReferenceUAVForOp(uav);
 
-    uint index = g_NvidiaExt.IncrementCounter();
-    g_NvidiaExt[index].src0u.xy  = address;
-    g_NvidiaExt[index].src1u.xy = value;
-    g_NvidiaExt[index].src2u.x  = atomicOpType;
-    g_NvidiaExt[index].opcode   = NV_EXTN_OP_UINT64_ATOMIC;
+	uint index = g_NvidiaExt.IncrementCounter();
+	g_NvidiaExt[index].src0u.xy  = address;
+	g_NvidiaExt[index].src1u.xy = value;
+	g_NvidiaExt[index].src2u.x  = atomicOpType;
+	g_NvidiaExt[index].opcode   = NV_EXTN_OP_UINT64_ATOMIC;
 
-    return g_NvidiaExt[index].dst0u.xy;
+	return g_NvidiaExt[index].dst0u.xy;
 }
 
 uint2 __NvAtomicCompareExchangeUINT64(RWTexture3D<uint2> uav, uint3 address, uint2 compareValue, uint2 value)
 {
-    __NvReferenceUAVForOp(uav);
+	__NvReferenceUAVForOp(uav);
 
-    uint index = g_NvidiaExt.IncrementCounter();
-    g_NvidiaExt[index].src0u.xyz  = address;
-    g_NvidiaExt[index].src1u.xy = compareValue;
-    g_NvidiaExt[index].src1u.zw = value;
-    g_NvidiaExt[index].src2u.x  = NV_EXTN_ATOM_CAS;
-    g_NvidiaExt[index].opcode   = NV_EXTN_OP_UINT64_ATOMIC;
+	uint index = g_NvidiaExt.IncrementCounter();
+	g_NvidiaExt[index].src0u.xyz  = address;
+	g_NvidiaExt[index].src1u.xy = compareValue;
+	g_NvidiaExt[index].src1u.zw = value;
+	g_NvidiaExt[index].src2u.x  = NV_EXTN_ATOM_CAS;
+	g_NvidiaExt[index].opcode   = NV_EXTN_OP_UINT64_ATOMIC;
 
-    return g_NvidiaExt[index].dst0u.xy;
+	return g_NvidiaExt[index].dst0u.xy;
 }
 
 uint2 __NvAtomicOpUINT64(RWTexture3D<uint2> uav, uint3 address, uint2 value, uint atomicOpType)
 {
-    __NvReferenceUAVForOp(uav);
+	__NvReferenceUAVForOp(uav);
 
-    uint index = g_NvidiaExt.IncrementCounter();
-    g_NvidiaExt[index].src0u.xyz  = address;
-    g_NvidiaExt[index].src1u.xy = value;
-    g_NvidiaExt[index].src2u.x  = atomicOpType;
-    g_NvidiaExt[index].opcode   = NV_EXTN_OP_UINT64_ATOMIC;
+	uint index = g_NvidiaExt.IncrementCounter();
+	g_NvidiaExt[index].src0u.xyz  = address;
+	g_NvidiaExt[index].src1u.xy = value;
+	g_NvidiaExt[index].src2u.x  = atomicOpType;
+	g_NvidiaExt[index].opcode   = NV_EXTN_OP_UINT64_ATOMIC;
 
-    return g_NvidiaExt[index].dst0u.xy;
+	return g_NvidiaExt[index].dst0u.xy;
 }
 
 
 uint4 __NvFootprint(uint texSpace, uint texIndex, uint smpSpace, uint smpIndex, uint texType, float3 location, uint footprintmode, uint gran, int3 offset = int3(0, 0, 0))
 {
-    uint index = g_NvidiaExt.IncrementCounter();
-    g_NvidiaExt[index].src0u.x = texIndex;
-    g_NvidiaExt[index].src0u.y  = smpIndex;
-    g_NvidiaExt[index].src1u.xyz = asuint(location);
-    g_NvidiaExt[index].src1u.w = gran;
-    g_NvidiaExt[index].src3u.x = texSpace;
-    g_NvidiaExt[index].src3u.y = smpSpace;
-    g_NvidiaExt[index].src3u.z = texType;
-    g_NvidiaExt[index].src3u.w = footprintmode;
-    g_NvidiaExt[index].src4u.xyz = asuint(offset);
+	uint index = g_NvidiaExt.IncrementCounter();
+	g_NvidiaExt[index].src0u.x = texIndex;
+	g_NvidiaExt[index].src0u.y  = smpIndex;
+	g_NvidiaExt[index].src1u.xyz = asuint(location);
+	g_NvidiaExt[index].src1u.w = gran;
+	g_NvidiaExt[index].src3u.x = texSpace;
+	g_NvidiaExt[index].src3u.y = smpSpace;
+	g_NvidiaExt[index].src3u.z = texType;
+	g_NvidiaExt[index].src3u.w = footprintmode;
+	g_NvidiaExt[index].src4u.xyz = asuint(offset);
 
-    g_NvidiaExt[index].opcode = NV_EXTN_OP_FOOTPRINT;
-    g_NvidiaExt[index].numOutputsForIncCounter = 4;
+	g_NvidiaExt[index].opcode = NV_EXTN_OP_FOOTPRINT;
+	g_NvidiaExt[index].numOutputsForIncCounter = 4;
 
-    // result is returned as the return value of IncrementCounter on fake UAV slot
-    uint4 op;
-    op.x = g_NvidiaExt.IncrementCounter();
-    op.y = g_NvidiaExt.IncrementCounter();
-    op.z = g_NvidiaExt.IncrementCounter();
-    op.w = g_NvidiaExt.IncrementCounter();
-    return op;
+	// result is returned as the return value of IncrementCounter on fake UAV slot
+	uint4 op;
+	op.x = g_NvidiaExt.IncrementCounter();
+	op.y = g_NvidiaExt.IncrementCounter();
+	op.z = g_NvidiaExt.IncrementCounter();
+	op.w = g_NvidiaExt.IncrementCounter();
+	return op;
 }
 
 uint4 __NvFootprintBias(uint texSpace, uint texIndex, uint smpSpace, uint smpIndex, uint texType, float3 location, uint footprintmode, uint gran, float bias, int3 offset = int3(0, 0, 0))
 {
-    uint index = g_NvidiaExt.IncrementCounter();
-    g_NvidiaExt[index].src0u.x = texIndex;
-    g_NvidiaExt[index].src0u.y  = smpIndex;
-    g_NvidiaExt[index].src1u.xyz = asuint(location);
-    g_NvidiaExt[index].src1u.w = gran;
-    g_NvidiaExt[index].src2u.x = asuint(bias);
-    g_NvidiaExt[index].src3u.x = texSpace;
-    g_NvidiaExt[index].src3u.y = smpSpace;
-    g_NvidiaExt[index].src3u.z = texType;
-    g_NvidiaExt[index].src3u.w = footprintmode;
-    g_NvidiaExt[index].src4u.xyz = asuint(offset);
+	uint index = g_NvidiaExt.IncrementCounter();
+	g_NvidiaExt[index].src0u.x = texIndex;
+	g_NvidiaExt[index].src0u.y  = smpIndex;
+	g_NvidiaExt[index].src1u.xyz = asuint(location);
+	g_NvidiaExt[index].src1u.w = gran;
+	g_NvidiaExt[index].src2u.x = asuint(bias);
+	g_NvidiaExt[index].src3u.x = texSpace;
+	g_NvidiaExt[index].src3u.y = smpSpace;
+	g_NvidiaExt[index].src3u.z = texType;
+	g_NvidiaExt[index].src3u.w = footprintmode;
+	g_NvidiaExt[index].src4u.xyz = asuint(offset);
 
-    g_NvidiaExt[index].opcode = NV_EXTN_OP_FOOTPRINT_BIAS;
-    g_NvidiaExt[index].numOutputsForIncCounter = 4;
+	g_NvidiaExt[index].opcode = NV_EXTN_OP_FOOTPRINT_BIAS;
+	g_NvidiaExt[index].numOutputsForIncCounter = 4;
 
-    // result is returned as the return value of IncrementCounter on fake UAV slot
-    uint4 op;
-    op.x = g_NvidiaExt.IncrementCounter();
-    op.y = g_NvidiaExt.IncrementCounter();
-    op.z = g_NvidiaExt.IncrementCounter();
-    op.w = g_NvidiaExt.IncrementCounter();
-    return op;
+	// result is returned as the return value of IncrementCounter on fake UAV slot
+	uint4 op;
+	op.x = g_NvidiaExt.IncrementCounter();
+	op.y = g_NvidiaExt.IncrementCounter();
+	op.z = g_NvidiaExt.IncrementCounter();
+	op.w = g_NvidiaExt.IncrementCounter();
+	return op;
 }
 
 uint4 __NvFootprintLevel(uint texSpace, uint texIndex, uint smpSpace, uint smpIndex, uint texType, float3 location, uint footprintmode, uint gran, float lodLevel, int3 offset = int3(0, 0, 0))
 {
-    uint index = g_NvidiaExt.IncrementCounter();
-    g_NvidiaExt[index].src0u.x = texIndex;
-    g_NvidiaExt[index].src0u.y  = smpIndex;
-    g_NvidiaExt[index].src1u.xyz = asuint(location);
-    g_NvidiaExt[index].src1u.w = gran;
-    g_NvidiaExt[index].src2u.x = asuint(lodLevel);
-    g_NvidiaExt[index].src3u.x = texSpace;
-    g_NvidiaExt[index].src3u.y = smpSpace;
-    g_NvidiaExt[index].src3u.z = texType;
-    g_NvidiaExt[index].src3u.w = footprintmode;
-    g_NvidiaExt[index].src4u.xyz = asuint(offset);
+	uint index = g_NvidiaExt.IncrementCounter();
+	g_NvidiaExt[index].src0u.x = texIndex;
+	g_NvidiaExt[index].src0u.y  = smpIndex;
+	g_NvidiaExt[index].src1u.xyz = asuint(location);
+	g_NvidiaExt[index].src1u.w = gran;
+	g_NvidiaExt[index].src2u.x = asuint(lodLevel);
+	g_NvidiaExt[index].src3u.x = texSpace;
+	g_NvidiaExt[index].src3u.y = smpSpace;
+	g_NvidiaExt[index].src3u.z = texType;
+	g_NvidiaExt[index].src3u.w = footprintmode;
+	g_NvidiaExt[index].src4u.xyz = asuint(offset);
 
-    g_NvidiaExt[index].opcode = NV_EXTN_OP_FOOTPRINT_LEVEL;
-    g_NvidiaExt[index].numOutputsForIncCounter = 4;
+	g_NvidiaExt[index].opcode = NV_EXTN_OP_FOOTPRINT_LEVEL;
+	g_NvidiaExt[index].numOutputsForIncCounter = 4;
 
-    // result is returned as the return value of IncrementCounter on fake UAV slot
-    uint4 op;
-    op.x = g_NvidiaExt.IncrementCounter();
-    op.y = g_NvidiaExt.IncrementCounter();
-    op.z = g_NvidiaExt.IncrementCounter();
-    op.w = g_NvidiaExt.IncrementCounter();
-    return op;
+	// result is returned as the return value of IncrementCounter on fake UAV slot
+	uint4 op;
+	op.x = g_NvidiaExt.IncrementCounter();
+	op.y = g_NvidiaExt.IncrementCounter();
+	op.z = g_NvidiaExt.IncrementCounter();
+	op.w = g_NvidiaExt.IncrementCounter();
+	return op;
 }
 
 uint4 __NvFootprintGrad(uint texSpace, uint texIndex, uint smpSpace, uint smpIndex, uint texType, float3 location, uint footprintmode, uint gran, float3 ddx, float3 ddy, int3 offset = int3(0, 0, 0))
 {
-    uint index = g_NvidiaExt.IncrementCounter();
-    g_NvidiaExt[index].src0u.x = texIndex;
-    g_NvidiaExt[index].src0u.y  = smpIndex;
-    g_NvidiaExt[index].src1u.xyz = asuint(location);
-    g_NvidiaExt[index].src1u.w = gran;
-    g_NvidiaExt[index].src2u.xyz = asuint(ddx);
-    g_NvidiaExt[index].src5u.xyz = asuint(ddy);
-    g_NvidiaExt[index].src3u.x = texSpace;
-    g_NvidiaExt[index].src3u.y = smpSpace;
-    g_NvidiaExt[index].src3u.z = texType;
-    g_NvidiaExt[index].src3u.w = footprintmode;
-    g_NvidiaExt[index].src4u.xyz = asuint(offset);
-    g_NvidiaExt[index].opcode = NV_EXTN_OP_FOOTPRINT_GRAD;
-    g_NvidiaExt[index].numOutputsForIncCounter = 4;
+	uint index = g_NvidiaExt.IncrementCounter();
+	g_NvidiaExt[index].src0u.x = texIndex;
+	g_NvidiaExt[index].src0u.y  = smpIndex;
+	g_NvidiaExt[index].src1u.xyz = asuint(location);
+	g_NvidiaExt[index].src1u.w = gran;
+	g_NvidiaExt[index].src2u.xyz = asuint(ddx);
+	g_NvidiaExt[index].src5u.xyz = asuint(ddy);
+	g_NvidiaExt[index].src3u.x = texSpace;
+	g_NvidiaExt[index].src3u.y = smpSpace;
+	g_NvidiaExt[index].src3u.z = texType;
+	g_NvidiaExt[index].src3u.w = footprintmode;
+	g_NvidiaExt[index].src4u.xyz = asuint(offset);
+	g_NvidiaExt[index].opcode = NV_EXTN_OP_FOOTPRINT_GRAD;
+	g_NvidiaExt[index].numOutputsForIncCounter = 4;
 
-    // result is returned as the return value of IncrementCounter on fake UAV slot
-    uint4 op;
-    op.x = g_NvidiaExt.IncrementCounter();
-    op.y = g_NvidiaExt.IncrementCounter();
-    op.z = g_NvidiaExt.IncrementCounter();
-    op.w = g_NvidiaExt.IncrementCounter();
-    return op;
+	// result is returned as the return value of IncrementCounter on fake UAV slot
+	uint4 op;
+	op.x = g_NvidiaExt.IncrementCounter();
+	op.y = g_NvidiaExt.IncrementCounter();
+	op.z = g_NvidiaExt.IncrementCounter();
+	op.w = g_NvidiaExt.IncrementCounter();
+	return op;
 }
 
 // returns value of special register - specify subopcode from any of NV_SPECIALOP_* specified in nvShaderExtnEnums.h - other opcodes undefined behavior
 uint __NvGetSpecial(uint subOpCode)
 {
-    uint index = g_NvidiaExt.IncrementCounter();
-    g_NvidiaExt[index].opcode = NV_EXTN_OP_GET_SPECIAL;
-    g_NvidiaExt[index].src0u.x = subOpCode;
-    return g_NvidiaExt.IncrementCounter();
+	uint index = g_NvidiaExt.IncrementCounter();
+	g_NvidiaExt[index].opcode = NV_EXTN_OP_GET_SPECIAL;
+	g_NvidiaExt[index].src0u.x = subOpCode;
+	return g_NvidiaExt.IncrementCounter();
 }
 
 // predicate is returned in laneValid indicating if srcLane is in range and val from specified lane is returned.
 int __NvShflGeneric(int val, uint srcLane, uint maskClampVal, out uint laneValid)
 {
-    uint index = g_NvidiaExt.IncrementCounter();
-    g_NvidiaExt[index].src0u.x  =  val;                             // variable to be shuffled
-    g_NvidiaExt[index].src0u.y  =  srcLane;                         // source lane
-    g_NvidiaExt[index].src0u.z  =  maskClampVal;
-    g_NvidiaExt[index].opcode   =  NV_EXTN_OP_SHFL_GENERIC;
-    g_NvidiaExt[index].numOutputsForIncCounter = 2;
+	uint index = g_NvidiaExt.IncrementCounter();
+	g_NvidiaExt[index].src0u.x  =  val;                             // variable to be shuffled
+	g_NvidiaExt[index].src0u.y  =  srcLane;                         // source lane
+	g_NvidiaExt[index].src0u.z  =  maskClampVal;
+	g_NvidiaExt[index].opcode   =  NV_EXTN_OP_SHFL_GENERIC;
+	g_NvidiaExt[index].numOutputsForIncCounter = 2;
 
-    laneValid = asuint(g_NvidiaExt.IncrementCounter());
-    return g_NvidiaExt.IncrementCounter();
+	laneValid = asuint(g_NvidiaExt.IncrementCounter());
+	return g_NvidiaExt.IncrementCounter();
 }
+)"
