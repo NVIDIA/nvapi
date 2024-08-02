@@ -1,56 +1,46 @@
+/*********************************************************************************************************\
+|*                                                                                                        *|
+|* SPDX-FileCopyrightText: Copyright (c) 2019-2024 NVIDIA CORPORATION & AFFILIATES. All rights reserved.  *|
+|* SPDX-License-Identifier: MIT                                                                           *|
+|*                                                                                                        *|
+|* Permission is hereby granted, free of charge, to any person obtaining a                                *|
+|* copy of this software and associated documentation files (the "Software"),                             *|
+|* to deal in the Software without restriction, including without limitation                              *|
+|* the rights to use, copy, modify, merge, publish, distribute, sublicense,                               *|
+|* and/or sell copies of the Software, and to permit persons to whom the                                  *|
+|* Software is furnished to do so, subject to the following conditions:                                   *|
+|*                                                                                                        *|
+|* The above copyright notice and this permission notice shall be included in                             *|
+|* all copies or substantial portions of the Software.                                                    *|
+|*                                                                                                        *|
+|* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR                             *|
+|* IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,                               *|
+|* FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL                               *|
+|* THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER                             *|
+|* LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING                                *|
+|* FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER                                    *|
+|* DEALINGS IN THE SOFTWARE.                                                                              *|
+|*                                                                                                        *|
+|*                                                                                                        *|
+\*********************************************************************************************************/
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+// Date: Jul 29, 2024 
+// File: nvapi.h
+//
+// NvAPI provides an interface to NVIDIA devices. This file contains the 
+// interface constants, structure definitions and function prototypes.
+//
+//   Target Profile: Open-Source
+//  Target Platform: windows
+//
+///////////////////////////////////////////////////////////////////////////////
 #include"nvapi_lite_salstart.h"
 #include"nvapi_lite_common.h"
 #include"nvapi_lite_sli.h"
 #include"nvapi_lite_surround.h"
 #include"nvapi_lite_stereo.h"
 #include"nvapi_lite_d3dext.h"
- /************************************************************************************************************************************\
-|*                                                                                                                                    *|
-|*     Copyright © 2012 NVIDIA Corporation.  All rights reserved.                                                                     *|
-|*                                                                                                                                    *|
-|*  NOTICE TO USER:                                                                                                                   *|
-|*                                                                                                                                    *|
-|*  This software is subject to NVIDIA ownership rights under U.S. and international Copyright laws.                                  *|
-|*                                                                                                                                    *|
-|*  This software and the information contained herein are PROPRIETARY and CONFIDENTIAL to NVIDIA                                     *|
-|*  and are being provided solely under the terms and conditions of an NVIDIA software license agreement.                             *|
-|*  Otherwise, you have no rights to use or access this software in any manner.                                                       *|
-|*                                                                                                                                    *|
-|*  If not covered by the applicable NVIDIA software license agreement:                                                               *|
-|*  NVIDIA MAKES NO REPRESENTATION ABOUT THE SUITABILITY OF THIS SOFTWARE FOR ANY PURPOSE.                                            *|
-|*  IT IS PROVIDED "AS IS" WITHOUT EXPRESS OR IMPLIED WARRANTY OF ANY KIND.                                                           *|
-|*  NVIDIA DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE,                                                                     *|
-|*  INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY, NONINFRINGEMENT, AND FITNESS FOR A PARTICULAR PURPOSE.                       *|
-|*  IN NO EVENT SHALL NVIDIA BE LIABLE FOR ANY SPECIAL, INDIRECT, INCIDENTAL, OR CONSEQUENTIAL DAMAGES,                               *|
-|*  OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS,  WHETHER IN AN ACTION OF CONTRACT,                         *|
-|*  NEGLIGENCE OR OTHER TORTIOUS ACTION,  ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOURCE CODE.            *|
-|*                                                                                                                                    *|
-|*  U.S. Government End Users.                                                                                                        *|
-|*  This software is a "commercial item" as that term is defined at 48 C.F.R. 2.101 (OCT 1995),                                       *|
-|*  consisting  of "commercial computer  software"  and "commercial computer software documentation"                                  *|
-|*  as such terms are  used in 48 C.F.R. 12.212 (SEPT 1995) and is provided to the U.S. Government only as a commercial end item.     *|
-|*  Consistent with 48 C.F.R.12.212 and 48 C.F.R. 227.7202-1 through 227.7202-4 (JUNE 1995),                                          *|
-|*  all U.S. Government End Users acquire the software with only those rights set forth herein.                                       *|
-|*                                                                                                                                    *|
-|*  Any use of this software in individual and commercial software must include,                                                      *|
-|*  in the user documentation and internal comments to the code,                                                                      *|
-|*  the above Disclaimer (as applicable) and U.S. Government End Users Notice.                                                        *|
-|*                                                                                                                                    *|
- \************************************************************************************************************************************/
- 
-
-///////////////////////////////////////////////////////////////////////////////
-//
-// Date: May 30, 2024 
-// File: nvapi.h
-//
-// NvAPI provides an interface to NVIDIA devices. This file contains the 
-// interface constants, structure definitions and function prototypes.
-//
-//   Target Profile: developer
-//  Target Platform: windows
-//
-///////////////////////////////////////////////////////////////////////////////
 #ifndef _NVAPI_H
 #define _NVAPI_H
 
@@ -1996,8 +1986,8 @@ NVAPI_INTERFACE NvAPI_GPU_GetConnectedDisplayIds(__in NvPhysicalGpuHandle hPhysi
 //
 //!   DESCRIPTION: This API returns display IDs for all possible outputs on the GPU.
 //!                For DPMST connector, it will return display IDs for all the video sinks in the topology. \n
-//! HOW TO USE: 1. The first call should be made to get the all display ID count. To get the display ID count, send in \n
-//!                  a) hPhysicalGpu    - a valid GPU handle(enumerated using NvAPI_EnumPhysicalGPUs()) as input,      \n
+//! HOW TO USE: 1. The first call should be made to get the all display ID count. To get the display ID count, send in         \n
+//!                  a) hPhysicalGpu    - a valid WDDM type GPU handle(enumerated using NvAPI_SYS_GetPhysicalGPUs()) as input, \n
 //!                  b) pDisplayIds     - NULL, as we just want to get the display ID count.                           \n
 //!                  c) pDisplayIdCount - a valid pointer to NvU32, whose value is set to ZERO.                        \n
 //!                If all parameters are correct and this call is successful, this call will return the display ID's count. \n
@@ -9247,10 +9237,14 @@ NVAPI_INTERFACE NvAPI_Disp_GetDisplayIdsFromTarget(__inout NV_TARGET_INFO_DATA* 
 
 typedef struct _NV_GET_VRR_INFO_V1
 {
-    NvU32               version;                          //!< [in]  Structure version
-    NvU32               bIsVRREnabled : 1;                //!< [out] Set if VRR Mode is currently enabled on given display.
-    NvU32               reserved      :31;                //!<       Reserved for future use.
-    NvU32               reservedEx[4];                    //!<       Reserved for future use
+    NvU32               version;                                    //!< [in]  Structure version
+    NvU32               bIsVRREnabled                    : 1;       //!< [out] Set if VRR Mode is currently active on given display.
+    NvU32               bIsVRRPossible                   : 1;       //!< [out] Set to true if VRR Mode is possible on the given display.
+    NvU32               bIsVRRRequested                  : 1;       //!< [out] Set to true if VRR Mode is requested for the given display.
+    NvU32               bIsVRRIndicatorEnabled           : 1;       //!< [out] Set to true if the VRR indicator is enabled. This can be done through the NVIDIA Control Panel.
+    NvU32               bIsDisplayInVRRMode              : 1;       //!< [out] Set to true if the display is in VRR Mode.
+    NvU32               reserved                         : 27;      //!<       Reserved for future use.
+    NvU32               reservedEx[4];                              //!<       Reserved for future use
 } NV_GET_VRR_INFO_V1;
 
 #define NV_GET_VRR_INFO_VER1  MAKE_NVAPI_VERSION(NV_GET_VRR_INFO_V1,1)
@@ -17720,7 +17714,9 @@ typedef struct _NV_GET_SLEEP_STATUS_PARAMS
     NvBool bLowLatencyMode;                               //!< (OUT) Is low latency mode enabled?
     NvBool bFsVrr;                                        //!< (OUT) Is fullscreen VRR enabled?
     NvBool bCplVsyncOn;                                   //!< (OUT) Is Control Panel overriding VSYNC ON?
-    NvU8   rsvd[126];                                     //!< (IN) Reserved. Must be set to 0s.
+    NvU32  sleepIntervalUs;                               //!< (OUT) Latest sleep interval in microseconds.
+    NvBool bUseGameSleep;                                 //!< (OUT) Is NvAPI_D3D_Sleep() being called?
+    NvU8   rsvd[121];                                     //!< (IN) Reserved. Must be set to 0s.
 } NV_GET_SLEEP_STATUS_PARAMS_V1;
 
 typedef NV_GET_SLEEP_STATUS_PARAMS_V1            NV_GET_SLEEP_STATUS_PARAMS;
@@ -18114,6 +18110,29 @@ NVAPI_INTERFACE NvAPI_D3D12_SetCreateCommandQueueLowLatencyHint(__in ID3D12Devic
 // Experimental API for internal use. DO NOT USE!
 //! SUPPORTED OS:  Windows 10 and higher
 //!
+typedef struct NVAPI_D3D12_CREATE_CUBIN_SHADER_PARAMS
+{
+    size_t structSizeIn;                            //!< [in]  Caller's version of input params
+    size_t structSizeOut;                           //!< [out] Driver's version of input params
+
+    ID3D12Device*       pDevice;                    //!< [in] pointer to ID3D12Device object
+    const void*         pCubin;                     //!< [in] pointer to blob containing the cubin
+    NvU32               size;                       //!< [in] size of pCubin blob in bytes
+    NvU32               blockX;                     //!< [in] size of CTA / thread block/group
+    NvU32               blockY;                     //!< [in] 
+    NvU32               blockZ;                     //!< [in] 
+    NvU32               dynSharedMemBytes;          //!< [in] dynamic shared memory required by the shader in bytes
+    const char*         pShaderName;                //!< [in] pointer to shader name, acts as identifier for SLI special handling, doesn't need to be accurate
+    NvU32               flags;                      //!< [in] reserved, set to 0
+    NVDX_ObjectHandle   hShader;                    //!< [out] variable that receives the handle to the created shader.
+
+} NVAPI_D3D12_CREATE_CUBIN_SHADER_PARAMS;
+
+NVAPI_INTERFACE NvAPI_D3D12_CreateCubinComputeShaderExV2(__inout NVAPI_D3D12_CREATE_CUBIN_SHADER_PARAMS* pParams);
+
+// Experimental API for internal use. DO NOT USE!
+//! SUPPORTED OS:  Windows 10 and higher
+//!
 NVAPI_INTERFACE NvAPI_D3D12_CreateCubinComputeShader(__in   ID3D12Device*       pDevice,
                                                      __in   const void*         pCubin,
                                                      __in   NvU32               size,
@@ -18167,6 +18186,49 @@ NVAPI_INTERFACE NvAPI_D3D12_DestroyCubinComputeShader(__in  ID3D12Device*       
 #endif //defined(__cplusplus) && defined(__d3d12_h__)
 
 #if defined(__d3d12_h__)
+// Experimental API for internal use. DO NOT USE!
+//! SUPPORTED OS:  Windows 10 and higher
+//!
+
+typedef struct NVAPI_D3D12_GET_CUDA_MERGED_TEXTURE_SAMPLER_OBJECT_PARAMS
+{
+    size_t structSizeIn;                            //!< [in]  Caller's version of input params
+    size_t structSizeOut;                           //!< [out] Driver's version of input params
+
+    ID3D12Device*                pDevice;           //!< [in] pointer to ID3D12Device object
+    D3D12_CPU_DESCRIPTOR_HANDLE  texDesc;           //!< [in] CPU descriptor handle of the texture (SRV)
+    D3D12_CPU_DESCRIPTOR_HANDLE  smpDesc;           //!< [in] CPU descriptor handle of the sampler (set to 0 if sampler isn't required)
+    NvU64                        textureHandle;     //!< [out] A variable that receives the driver handle
+
+} NVAPI_D3D12_GET_CUDA_MERGED_TEXTURE_SAMPLER_OBJECT_PARAMS;
+
+NVAPI_INTERFACE NvAPI_D3D12_GetCudaMergedTextureSamplerObject(__inout NVAPI_D3D12_GET_CUDA_MERGED_TEXTURE_SAMPLER_OBJECT_PARAMS* pParams);
+
+// Experimental API for internal use. DO NOT USE!
+//! SUPPORTED OS:  Windows 10 and higher
+//!
+typedef enum _NVAPI_D3D12_GET_CUDA_INDEPENDENT_DESCRIPTOR_OBJECT_TYPE
+{
+    NVAPI_D3D12_GET_CUDA_INDEPENDENT_DESCRIPTOR_OBJECT_SURFACE = 0,
+    NVAPI_D3D12_GET_CUDA_INDEPENDENT_DESCRIPTOR_OBJECT_TEXTURE = 1,
+    NVAPI_D3D12_GET_CUDA_INDEPENDENT_DESCRIPTOR_OBJECT_SAMPLER = 2,
+
+} NVAPI_D3D12_GET_CUDA_INDEPENDENT_DESCRIPTOR_OBJECT_TYPE;
+
+typedef struct NVAPI_D3D12_GET_CUDA_INDEPENDENT_DESCRIPTOR_OBJECT_PARAMS
+{
+    size_t structSizeIn;                                                //!< [in]  Caller's version of input params
+    size_t structSizeOut;                                               //!< [out] Driver's version of input params
+
+    ID3D12Device*                                           pDevice;    //!< [in]  Pointer to ID3D12Device object
+    NVAPI_D3D12_GET_CUDA_INDEPENDENT_DESCRIPTOR_OBJECT_TYPE type;       //!< [in]  Type of the descriptor
+    D3D12_CPU_DESCRIPTOR_HANDLE                             desc;       //!< [in]  CPU descriptor handle of the UAV
+    NvU64                                                   handle;     //!< [out] A pointer to memory that receives the driver handle
+
+} NVAPI_D3D12_GET_CUDA_INDEPENDENT_DESCRIPTOR_OBJECT_PARAMS;
+
+NVAPI_INTERFACE NvAPI_D3D12_GetCudaIndependentDescriptorObject(__inout NVAPI_D3D12_GET_CUDA_INDEPENDENT_DESCRIPTOR_OBJECT_PARAMS* pParams);
+
 // Experimental API for internal use. DO NOT USE!
 //! SUPPORTED OS:  Windows 10 and higher
 //!
@@ -18863,13 +18925,13 @@ NVAPI_INTERFACE NvAPI_D3D12_GetRaytracingOpacityMicromapArrayPrebuildInfo(
 //! \ingroup dx
 typedef enum _NVAPI_D3D12_PIPELINE_CREATION_STATE_FLAGS
 {
-    NVAPI_D3D12_PIPELINE_CREATION_STATE_FLAGS_NONE               = 0,         //!< [in] No pipeline flags.
-    NVAPI_D3D12_PIPELINE_CREATION_STATE_FLAGS_ENABLE_OMM_SUPPORT = NV_BIT(0), //!< [in] Change whether raytracing pipelines are created with support for Opacity Micromaps.
-                                                                              //!<      If a triangle with an OMM is encountered during traversal and the pipeline was not created with support for them, behavior is undefined.
-                                                                              //!<      Support should only be enabled if there are OMMs present, since it may incur a small penalty on traversal performance overall.
-    NVAPI_D3D12_PIPELINE_CREATION_STATE_FLAGS_ENABLE_DMM_SUPPORT = NV_BIT(1), //!< [in] Change whether raytracing pipelines are created with support for Displacement Micromaps.
-                                                                              //!<      If a triangle with a DMM is encountered during traversal and the pipeline was not created with support for them, behavior is undefined.
-                                                                              //!<      Support should only be enabled if there are DMMs present, since it may incur a small penalty on traversal performance overall.
+    NVAPI_D3D12_PIPELINE_CREATION_STATE_FLAGS_NONE                   = 0,         //!< [in] No pipeline flags.
+    NVAPI_D3D12_PIPELINE_CREATION_STATE_FLAGS_ENABLE_OMM_SUPPORT     = NV_BIT(0), //!< [in] Change whether raytracing pipelines are created with support for Opacity Micromaps.
+                                                                                  //!<      If a triangle with an OMM is encountered during traversal and the pipeline was not created with support for them, behavior is undefined.
+                                                                                  //!<      Support should only be enabled if there are OMMs present, since it may incur a small penalty on traversal performance overall.
+    NVAPI_D3D12_PIPELINE_CREATION_STATE_FLAGS_ENABLE_DMM_SUPPORT     = NV_BIT(1), //!< [in] Change whether raytracing pipelines are created with support for Displacement Micromaps.
+                                                                                  //!<      If a triangle with a DMM is encountered during traversal and the pipeline was not created with support for them, behavior is undefined.
+                                                                                  //!<      Support should only be enabled if there are DMMs present, since it may incur a small penalty on traversal performance overall.
 } NVAPI_D3D12_PIPELINE_CREATION_STATE_FLAGS;
 
 //! State used when creating new pipelines.
