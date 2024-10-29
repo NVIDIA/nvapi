@@ -418,7 +418,7 @@ typedef enum _NvAPI_Status
 //
 //!   DESCRIPTION: This API returns display driver version and driver-branch string.
 //!
-//! SUPPORTED OS:  Windows 7 and higher
+//! SUPPORTED OS:  Windows 10 and higher
 //!
 //! 
 //! \param [out]  pDriverVersion         Contains the driver version after successful return.
@@ -502,7 +502,7 @@ typedef NV_DISPLAY_DRIVER_MEMORY_INFO_V3 NV_DISPLAY_DRIVER_MEMORY_INFO;
 //!                If the GPU is in TCC Mode, only dedicatedVideoMemory will be returned in pMemoryInfo (NV_DISPLAY_DRIVER_MEMORY_INFO).
 //!
 //! \deprecated  Do not use this function - it is deprecated in release 520. Instead, use NvAPI_GPU_GetMemoryInfoEx.
-//! SUPPORTED OS:  Windows 7 and higher
+//! SUPPORTED OS:  Windows 10 and higher
 //!
 //!
 //! TCC_SUPPORTED
@@ -535,7 +535,7 @@ typedef struct
                                                //!< Typically used with integrated GPUs that do not have dedicated video memory.
     NvU64   sharedSystemMemory;                //!< Size(in bytes) of shared system memory that driver is allowed to commit for surfaces across all allocations.
                                                //!< On discrete GPUs, it is used to utilize system memory for various operations. It does not need to be reserved during boot.
-                                               //!< It may be used by both GPU and CPU, and has an “on-demand” type of usage.
+                                               //!< It may be used by both GPU and CPU, and has an "on-demand" type of usage.
     NvU64   curAvailableDedicatedVideoMemory;  //!< Size(in bytes) of the current available physical framebuffer for allocating video memory surfaces.
     NvU64   dedicatedVideoMemoryEvictionsSize; //!< Size(in bytes) of the total size of memory released as a result of the evictions.
     NvU64   dedicatedVideoMemoryEvictionCount; //!< Indicates the number of eviction events that caused an allocation to be removed from dedicated video memory to free GPU
@@ -604,7 +604,7 @@ NVAPI_INTERFACE NvAPI_GPU_GetMemoryInfoEx(NvPhysicalGpuHandle hPhysicalGpu, NV_G
 //!
 //!       For GPU handles in TCC MODE please use NvAPI_EnumTCCPhysicalGPUs()
 //!
-//! SUPPORTED OS:  Windows 7 and higher
+//! SUPPORTED OS:  Windows 10 and higher
 //!
 //!
 //! \par Introduced in
@@ -635,7 +635,7 @@ static const NVDX_ObjectHandle NVDX_OBJECT_NONE = 0;
 //!                         we want the NvAPI handle
 //! \param [out]  pHandle   A handle to the resource
 //!
-//! SUPPORTED OS:  Windows 7 and higher
+//! SUPPORTED OS:  Windows 10 and higher
 //!
 //!
 //! \since Release: 185

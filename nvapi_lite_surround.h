@@ -31,7 +31,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-//! SUPPORTED OS:  Windows 7 and higher
+//! SUPPORTED OS:  Windows 10 and higher
 //!
 ///////////////////////////////////////////////////////////////////////////////
 //
@@ -68,7 +68,7 @@ NVAPI_INTERFACE NvAPI_DISP_GetGDIPrimaryDisplayId(NvU32* displayId);
 //!                                  width and height are 0, the current
 //!                                  resolution is used.
 //! \param [out]     viewports       Array of NV_RECT viewports.
-//! SUPPORTED OS:  Windows 7 and higher
+//! SUPPORTED OS:  Windows 10 and higher
 //!
 //!                                  If the requested resolution is a single-wide
 //!                                  resolution, only viewports[0] will

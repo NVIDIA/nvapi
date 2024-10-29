@@ -358,6 +358,7 @@ struct NVAPI_INTERFACE_TABLE nvapi_interface_table[] =
     { "NvAPI_D3D_GetLatency", 0x1a587f9c },
     { "NvAPI_D3D_SetLatencyMarker", 0xd9984c05 },
     { "NvAPI_D3D12_SetAsyncFrameMarker", 0x13c98f73 },
+    { "NvAPI_D3D11_SetAsyncFrameMarker", 0x59c2c510 },
     { "NvAPI_D3D12_NotifyOutOfBandCommandQueue", 0x03d6e8cb },
     { "NvAPI_D3D12_SetCreateCommandQueueLowLatencyHint", 0x548c224f },
     { "NvAPI_D3D12_CreateCubinComputeShaderExV2", 0x299f5fdc },

@@ -40,7 +40,7 @@ extern "C" {
 //!                If stereo is not enabled, then calls to functions that require that stereo is enabled have no effect,
 //!                and will return the appropriate error code.
 //!
-//! SUPPORTED OS:  Windows 7 and higher
+//! SUPPORTED OS:  Windows 10 and higher
 //!
 //!
 //! \since Release: 180
@@ -62,7 +62,7 @@ NVAPI_INTERFACE NvAPI_Stereo_Enable(void);
 //!                If stereo is not enabled, then calls to functions that require that stereo is enabled have no effect,
 //!                and will return the appropriate error code.
 //!
-//! SUPPORTED OS:  Windows 7 and higher
+//! SUPPORTED OS:  Windows 10 and higher
 //!
 //!
 //! \since Release: 180
@@ -81,7 +81,7 @@ NVAPI_INTERFACE NvAPI_Stereo_Disable(void);
 //
 //! DESCRIPTION:   This API checks if stereo mode is enabled in the registry.
 //!
-//! SUPPORTED OS:  Windows 7 and higher
+//! SUPPORTED OS:  Windows 10 and higher
 //!
 //!
 //! \since Release: 180
@@ -114,7 +114,7 @@ NVAPI_INTERFACE NvAPI_Stereo_IsEnabled(NvU8 *pIsStereoEnabled);
 //!
 //! WHEN TO USE:   After the stereo handle for the device interface is created via successfull call to the appropriate NvAPI_Stereo_CreateHandleFrom() function.
 //!
-//! SUPPORTED OS:  Windows 7 and higher
+//! SUPPORTED OS:  Windows 10 and higher
 //!
 //!
 //! \since Release: 180
@@ -140,7 +140,7 @@ NVAPI_INTERFACE NvAPI_Stereo_CreateHandleFromIUnknown(IUnknown *pDevice, StereoH
 //! DESCRIPTION:   This API destroys the stereo handle created with one of the NvAPI_Stereo_CreateHandleFrom() functions.
 //!                This should be called after the device corresponding to the handle has been destroyed.
 //!
-//! SUPPORTED OS:  Windows 7 and higher
+//! SUPPORTED OS:  Windows 10 and higher
 //!
 //!
 //! \since Release: 180
@@ -166,7 +166,7 @@ NVAPI_INTERFACE NvAPI_Stereo_DestroyHandle(StereoHandle stereoHandle);
 //!
 //! WHEN TO USE:   After the stereo handle for the device interface is created via successfull call to the appropriate NvAPI_Stereo_CreateHandleFrom() function.
 //!
-//! SUPPORTED OS:  Windows 7 and higher
+//! SUPPORTED OS:  Windows 10 and higher
 //!
 //!
 //! \since Release: 180
@@ -192,7 +192,7 @@ NVAPI_INTERFACE NvAPI_Stereo_Activate(StereoHandle stereoHandle);
 //!
 //! WHEN TO USE:   After the stereo handle for the device interface is created via successfull call to the appropriate NvAPI_Stereo_CreateHandleFrom() function.
 //!
-//! SUPPORTED OS:  Windows 7 and higher
+//! SUPPORTED OS:  Windows 10 and higher
 //!
 //!
 //! \since Release: 180
@@ -216,7 +216,7 @@ NVAPI_INTERFACE NvAPI_Stereo_Deactivate(StereoHandle stereoHandle);
 //!
 //! WHEN TO USE:   After the stereo handle for the device interface is created via successfull call to the appropriate NvAPI_Stereo_CreateHandleFrom() function.
 //!
-//! SUPPORTED OS:  Windows 7 and higher
+//! SUPPORTED OS:  Windows 10 and higher
 //!
 //!
 //! \since Release: 180
@@ -241,7 +241,7 @@ NVAPI_INTERFACE NvAPI_Stereo_IsActivated(StereoHandle stereoHandle, NvU8 *pIsSte
 //!
 //! WHEN TO USE:   After the stereo handle for the device interface is created via successfull call to the appropriate NvAPI_Stereo_CreateHandleFrom() function.
 //!
-//! SUPPORTED OS:  Windows 7 and higher
+//! SUPPORTED OS:  Windows 10 and higher
 //!
 //!
 //! \since Release: 180
@@ -266,7 +266,7 @@ NVAPI_INTERFACE NvAPI_Stereo_GetSeparation(StereoHandle stereoHandle, float *pSe
 //!
 //! WHEN TO USE:   After the stereo handle for the device interface is created via successfull call to appropriate NvAPI_Stereo_CreateHandleFrom() function.
 //!
-//! SUPPORTED OS:  Windows 7 and higher
+//! SUPPORTED OS:  Windows 10 and higher
 //!
 //!
 //! \since Release: 180
@@ -292,7 +292,7 @@ NVAPI_INTERFACE NvAPI_Stereo_SetSeparation(StereoHandle stereoHandle, float newS
 //!
 //! WHEN TO USE:   After the stereo handle for the device interface is created via successfull call to the appropriate NvAPI_Stereo_CreateHandleFrom() function.
 //!
-//! SUPPORTED OS:  Windows 7 and higher
+//! SUPPORTED OS:  Windows 10 and higher
 //!
 //!
 //! \since Release: 180
@@ -317,7 +317,7 @@ NVAPI_INTERFACE NvAPI_Stereo_GetConvergence(StereoHandle stereoHandle, float *pC
 //!
 //! WHEN TO USE:   After the stereo handle for the device interface is created via successfull call to the appropriate NvAPI_Stereo_CreateHandleFrom() function.
 //!
-//! SUPPORTED OS:  Windows 7 and higher
+//! SUPPORTED OS:  Windows 10 and higher
 //!
 //!
 //! \since Release: 180
@@ -346,7 +346,7 @@ NVAPI_INTERFACE NvAPI_Stereo_SetConvergence(StereoHandle stereoHandle, float new
 //!
 //! \since Release: 285
 //!
-//! SUPPORTED OS:  Windows 7 and higher
+//! SUPPORTED OS:  Windows 10 and higher
 //!
 //!
 //! \param [in]   stereoHandle  Stereo handle that corresponds to the device interface.
@@ -384,7 +384,7 @@ NVAPI_INTERFACE NvAPI_Stereo_SetActiveEye(StereoHandle hStereoHandle, NV_STEREO_
 //!
 //! \since Release: 285
 //!
-//! SUPPORTED OS:  Windows 7 and higher
+//! SUPPORTED OS:  Windows 10 and higher
 //!
 //!      
 //! \param [in]    mode       Defines the 3D stereo driver mode: Direct or Automatic
@@ -415,7 +415,7 @@ NVAPI_INTERFACE NvAPI_Stereo_SetDriverMode( NV_STEREO_DRIVER_MODE mode );
 //! 
 //! HOW TO USE:    After the stereo handle for device interface is created via successfull call to appropriate API. Applies only to DirectX 9 and up.
 //!
-//! SUPPORTED OS:  Windows 7 and higher
+//! SUPPORTED OS:  Windows 10 and higher
 //!
 //!
 //! \param [in]   stereoHandle  Stereo handle that corresponds to the device interface.
@@ -436,7 +436,7 @@ NVAPI_INTERFACE NvAPI_Stereo_GetEyeSeparation(StereoHandle hStereoHandle,  float
 //
 //! DESCRIPTION:   This API returns availability of windowed mode stereo
 //!
-//! SUPPORTED OS:  Windows 7 and higher
+//! SUPPORTED OS:  Windows 10 and higher
 //!
 //!
 //! \param [out] bSupported(OUT)    != 0  - supported,  \n
@@ -461,7 +461,7 @@ NVAPI_INTERFACE NvAPI_Stereo_IsWindowedModeSupported(NvU8* bSupported);
 //!
 //! \since Release: 285
 //!
-//! SUPPORTED OS:  Windows 7 and higher
+//! SUPPORTED OS:  Windows 10 and higher
 //!
 //!
 //! DESCRIPTION: This API sets surface creation mode for this device interface.
@@ -493,7 +493,7 @@ NVAPI_INTERFACE NvAPI_Stereo_SetSurfaceCreationMode(__in StereoHandle hStereoHan
 //!
 //! \since Release: 295
 //!
-//! SUPPORTED OS:  Windows 7 and higher
+//! SUPPORTED OS:  Windows 10 and higher
 //!
 //!
 //! DESCRIPTION: This API gets surface creation mode for this device interface.
@@ -514,7 +514,7 @@ NVAPI_INTERFACE NvAPI_Stereo_GetSurfaceCreationMode(__in StereoHandle hStereoHan
 //! \param [in]  hStereoHandle    Stereo handle that corresponds to the device interface.
 //! \param [out] pWasStereoized   Address where result of the inquiry will be placed.
 //!
-//! SUPPORTED OS:  Windows 7 and higher
+//! SUPPORTED OS:  Windows 10 and higher
 //!
 //!
 //! DESCRIPTION: This API checks if the last draw call was stereoized. It is a very expensive to call and should be used for debugging purpose *only*.
@@ -532,7 +532,7 @@ NVAPI_INTERFACE NvAPI_Stereo_Debug_WasLastDrawStereoized(__in StereoHandle hSter
 // FUNCTION NAME: NvAPI_Stereo_SetDefaultProfile
 //
 //!
-//! SUPPORTED OS:  Windows 7 and higher
+//! SUPPORTED OS:  Windows 10 and higher
 //!
 //!
 //! DESCRIPTION: This API defines the stereo profile used by the driver in case the application has no associated profile.
@@ -555,7 +555,7 @@ NVAPI_INTERFACE NvAPI_Stereo_SetDefaultProfile(__in const char* szProfileName);
 //
 // FUNCTION NAME: NvAPI_Stereo_GetDefaultProfile
 //
-//! SUPPORTED OS:  Windows 7 and higher
+//! SUPPORTED OS:  Windows 10 and higher
 //!
 //!
 //! DESCRIPTION: This API retrieves the current default stereo profile.
