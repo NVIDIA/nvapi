@@ -25,7 +25,7 @@
 \*********************************************************************************************************/
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
-// Date: Oct 24, 2024 
+// Date: Dec 17, 2024 
 // File: nvapi.h
 //
 // NvAPI provides an interface to NVIDIA devices. This file contains the 
@@ -22143,6 +22143,391 @@ NVAPI_INTERFACE NvAPI_D3D9_CreateSwapChain(StereoHandle hStereoHandle,
 
 
 
+//! SUPPORTED OS:  Windows 10 and higher
+//!
+#if defined(__cplusplus) && defined(_WINNT_)
+///////////////////////////////////////////////////////////////////////////////
+//
+// FUNCTION NAME: NvAPI_Vulkan_InitLowLatencyDevice
+//
+// !!** DEPRECATED, please use VK_NV_low_latency2 instead **!!
+//! \deprecated  Do not use this function - it is deprecated in release 565.
+//
+//!   DESCRIPTION: This function has to be used to initialize a Vulkan device
+//!   as a low latency device. The driver initializes a set of parameters to
+//!   be used in subsequent low latency API calls for this device.
+//!   The returned NV_VULKAN_LOW_LATENCY_DEVICE_PARAMS has to be passed into
+//!   any low latency API call as a parameter to ensure use of these parameters.
+//!
+//! \since Release: 455
+//! \param [in] vkDevice                      The Vulkan device handle
+//! \param [out] signalDemaphoreHandle        pointer to a VkSemaphore handle that is signalling in Sleep
+//! SUPPORTED OS:  Windows 10 and higher
+//!
+//!
+//! \return This API can return any of the error codes enumerated in #NvAPI_Status.
+//!         If there are return error codes with specific meaning for this API, they are listed below.
+//!
+//! \ingroup oglapi
+///////////////////////////////////////////////////////////////////////////////
+__nvapi_deprecated_function("Do not use this function - it is deprecated in release 565.")
+NVAPI_INTERFACE NvAPI_Vulkan_InitLowLatencyDevice(__in HANDLE vkDevice, __out HANDLE *signalSemaphoreHandle);
+#endif // defined(__cplusplus) && defined(_WINNT_)
+
+//! SUPPORTED OS:  Windows 10 and higher
+//!
+#if defined(__cplusplus) && defined(_WINNT_)
+///////////////////////////////////////////////////////////////////////////////
+//
+// FUNCTION NAME: NvAPI_Vulkan_DestroyLowLatencyDevice
+//
+// !!** DEPRECATED, please use VK_NV_low_latency2 instead **!!
+//! \deprecated  Do not use this function - it is deprecated in release 565.
+//
+//!   DESCRIPTION: This function releases the set of low latency device
+//!   parameters.
+//!
+//! \since Release: 455
+//! \param [in] vkDevice                      The Vulkan device handle
+//! SUPPORTED OS:  Windows 10 and higher
+//!
+//!
+//! \return This API can return any of the error codes enumerated in #NvAPI_Status.
+//!         If there are return error codes with specific meaning for this API, they are listed below.
+//!
+//! \ingroup oglapi
+///////////////////////////////////////////////////////////////////////////////
+__nvapi_deprecated_function("Do not use this function - it is deprecated in release 565.")
+NVAPI_INTERFACE NvAPI_Vulkan_DestroyLowLatencyDevice(__in HANDLE vkDevice);
+#endif // defined(__cplusplus) && defined(_WINNT_)
+
+
+//! SUPPORTED OS:  Windows 10 and higher
+//!
+//! Used to get sleep status
+//! \ingroup oglapi
+typedef struct _NV_VULKAN_GET_SLEEP_STATUS_PARAMS
+{
+    NvU32  version;                                       //!< (IN) Structure version
+    NvBool bLowLatencyMode;                               //!< (OUT) Is low latency mode enabled?
+    NvU8   rsvd[128];                                     //!< (IN) Reserved. Must be set to 0s.
+} NV_VULKAN_GET_SLEEP_STATUS_PARAMS_V1;
+
+typedef NV_VULKAN_GET_SLEEP_STATUS_PARAMS_V1            NV_VULKAN_GET_SLEEP_STATUS_PARAMS;
+#define NV_VULKAN_GET_SLEEP_STATUS_PARAMS_VER1          MAKE_NVAPI_VERSION(NV_VULKAN_GET_SLEEP_STATUS_PARAMS_V1, 1)
+#define NV_VULKAN_GET_SLEEP_STATUS_PARAMS_VER           NV_VULKAN_GET_SLEEP_STATUS_PARAMS_VER1
+
+//! SUPPORTED OS:  Windows 10 and higher
+//!
+#if defined(__cplusplus) && defined(_WINNT_)
+///////////////////////////////////////////////////////////////////////////////
+//
+// FUNCTION NAME: NvAPI_Vulkan_GetSleepStatus
+//
+// !!** DEPRECATED, please use VK_NV_low_latency2 instead **!!
+//! \deprecated  Do not use this function - it is deprecated in release 565.
+//
+//!   DESCRIPTION: This function can be used to get the latest sleep status.
+//!   bLowLatencyMode indicates whether low latency mode is currently
+//!   enabled in the driver.
+//!   Note that it may not always reflect the previously requested sleep mode,
+//!   as the feature may not be available on the platform, or the setting has
+//!   been overridden by the control panel, for example.
+//!
+//! \since Release: 455
+//! \param [in] vkDevice                      The Vulkan device handle
+//! \param [inout] pGetSleepStatusParams      Sleep status params.
+//! SUPPORTED OS:  Windows 10 and higher
+//!
+//!
+//! \return This API can return any of the error codes enumerated in #NvAPI_Status.
+//!         If there are return error codes with specific meaning for this API, they are listed below.
+//!
+//! \ingroup oglapi
+///////////////////////////////////////////////////////////////////////////////
+__nvapi_deprecated_function("Do not use this function - it is deprecated in release 565.")
+NVAPI_INTERFACE NvAPI_Vulkan_GetSleepStatus(__in HANDLE vkDevice, __inout NV_VULKAN_GET_SLEEP_STATUS_PARAMS *pGetSleepStatusParams);
+#endif // defined(__cplusplus) && defined(_WINNT_)
+
+//! SUPPORTED OS:  Windows 10 and higher
+//!
+//! Used to set sleep mode
+//! \ingroup oglapi
+#if defined(__cplusplus) && defined(_WINNT_)
+typedef struct _NV_VULKAN_SET_SLEEP_MODE_PARAMS
+{
+    NvU32  version;                                       //!< (IN) Structure version
+    NvBool bLowLatencyMode;                               //!< (IN) Low latency mode enable/disable.
+    NvBool bLowLatencyBoost;                              //!< (IN) Request maximum GPU clock frequency regardless of workload.
+    NvU32  minimumIntervalUs;                             //!< (IN) Minimum frame interval in microseconds. 0 = no frame rate limit. 
+    NvU8   rsvd[32];                                      //!< (IN) Reserved. Must be set to 0s.
+} NV_VULKAN_SET_SLEEP_MODE_PARAMS_V1;
+
+typedef NV_VULKAN_SET_SLEEP_MODE_PARAMS_V1            NV_VULKAN_SET_SLEEP_MODE_PARAMS;
+#define NV_VULKAN_SET_SLEEP_MODE_PARAMS_VER1          MAKE_NVAPI_VERSION(NV_VULKAN_SET_SLEEP_MODE_PARAMS_V1, 1)
+#define NV_VULKAN_SET_SLEEP_MODE_PARAMS_VER           NV_VULKAN_SET_SLEEP_MODE_PARAMS_VER1
+#endif // defined(__cplusplus) && defined(_WINNT_)
+
+//! SUPPORTED OS:  Windows 10 and higher
+//!
+#if defined(__cplusplus) && defined(_WINNT_)
+///////////////////////////////////////////////////////////////////////////////
+//
+// FUNCTION NAME: NvAPI_Vulkan_SetSleepMode
+//
+// !!** DEPRECATED, please use VK_NV_low_latency2 instead **!!
+//! \deprecated  Do not use this function - it is deprecated in release 565.
+//
+//!   DESCRIPTION: This function can be used to update sleep mode dynamically.
+//!   The settings are not dependent to each other, meaning low latency mode
+//!   can be enabled/disabled regardless of whether minimum interval is set or
+//!   not. The former is to intelligently lower latency without impacting frame
+//!   rate. The later is to limit frame rate (e.g. minimumIntervalUs = 10000
+//!   limits frame rate to 100 FPS). They work well separately and/or together.
+//!   Note that minimumIntervalUs usage is not limited to lowering latency, so
+//!   feel free to use it to limit frame rate for menu, cut scenes, etc.
+//!   Note that low latency mode can be enabled, and/or minimum interval can
+//!   be set, even without using NvAPI_D3D_Sleep(). However, without it, the
+//!   sleep to achieve these features would happen at a less optimal point,
+//!   resulting in higher overall latency.
+//!   The bLowLatencyBoost will request the GPU run at max clocks even in 
+//!   scenarios where it is idle most of the frame and would normally try
+//!   to save power.  This can decrease latency in CPU-limited scenarios.
+//!   While this function can be called as often as needed, it is not
+//!   necessary nor recommended to call this too frequently (e.g. every frame),
+//!   as the settings persist for the target device.
+//!
+//! \since Release: 455
+//! \param [in] vkDevice                      The Vulkan device handle
+//! \param [in] pSetSleepModeParams           Sleep mode params.
+//! SUPPORTED OS:  Windows 10 and higher
+//!
+//!
+//! \return This API can return any of the error codes enumerated in #NvAPI_Status.
+//!         If there are return error codes with specific meaning for this API, they are listed below.
+//!
+//! \ingroup oglapi
+///////////////////////////////////////////////////////////////////////////////
+__nvapi_deprecated_function("Do not use this function - it is deprecated in release 565.")
+NVAPI_INTERFACE NvAPI_Vulkan_SetSleepMode(__in HANDLE vkDevice, __in NV_VULKAN_SET_SLEEP_MODE_PARAMS *pSetSleepModeParams);
+#endif // defined(__cplusplus) && defined(_WINNT_)
+
+//! SUPPORTED OS:  Windows 10 and higher
+//!
+#if defined(__cplusplus) && defined(_WINNT_)
+///////////////////////////////////////////////////////////////////////////////
+//
+// FUNCTION NAME: NvAPI_Vulkan_Sleep
+//
+// !!** DEPRECATED, please use VK_NV_low_latency2 instead **!!
+//! \deprecated  Do not use this function - it is deprecated in release 565.
+//
+//!   DESCRIPTION: It is recommended to call this function at the very start of
+//!   each frame (e.g. before input sampling). If there is a need to sleep,
+//!   due to frame rate limit and/or low latency features, for example,
+//!   this call provides an entry point for the driver to sleep at the most
+//!   optimal spot to achieve the lowest latency.
+//!   It is recommended to call this function even when low latency mode is
+//!   disabled and minimum interval is 0. Other features, such as Maximum Frame
+//!   Rate setting, could be enabled in the control panel to benefit from this.
+//!   It is OK to start (or stop) using this function at any time. However,
+//!   when using this function, it must be called exactly once on each frame.
+//!   If this function is not called, after several frames, the driver would
+//!   fallback to sleep at its less optimal spot.
+//!
+//! \since Release: 455
+//! \param [in] vkDevice                      The Vulkan device handle
+//! \param [in] signalValue                   Value that will be signalled in signalDemaphoreHandle semaphore at Sleep
+//! SUPPORTED OS:  Windows 10 and higher
+//!
+//!
+//! \return This API can return any of the error codes enumerated in #NvAPI_Status.
+//!         If there are return error codes with specific meaning for this API, they are listed below.
+//!
+//! \ingroup oglapi
+///////////////////////////////////////////////////////////////////////////////
+__nvapi_deprecated_function("Do not use this function - it is deprecated in release 565.")
+NVAPI_INTERFACE NvAPI_Vulkan_Sleep(__in HANDLE vkDevice, __in NvU64 signalValue);
+#endif // defined(__cplusplus) && defined(_WINNT_)
+
+//! SUPPORTED OS:  Windows 10 and higher
+//!
+//! Used to get latency report.
+//! \ingroup oglapi
+typedef struct _NV_VULKAN_LATENCY_RESULT_PARAMS
+{
+    NvU32  version;                                       //!< (IN) Structure version
+    struct vkFrameReport {
+        NvU64 frameID;
+        NvU64 inputSampleTime;
+        NvU64 simStartTime;
+        NvU64 simEndTime;
+        NvU64 renderSubmitStartTime;
+        NvU64 renderSubmitEndTime;
+        NvU64 presentStartTime;
+        NvU64 presentEndTime;
+        NvU64 driverStartTime;
+        NvU64 driverEndTime;
+        NvU64 osRenderQueueStartTime;
+        NvU64 osRenderQueueEndTime;
+        NvU64 gpuRenderStartTime;
+        NvU64 gpuRenderEndTime;
+        NvU8  rsvd[128];
+    } frameReport[64];
+    NvU8  rsvd[32];
+} NV_VULKAN_LATENCY_RESULT_PARAMS_V1;
+
+typedef NV_VULKAN_LATENCY_RESULT_PARAMS_V1            NV_VULKAN_LATENCY_RESULT_PARAMS;
+#define NV_VULKAN_LATENCY_RESULT_PARAMS_VER1          MAKE_NVAPI_VERSION(NV_VULKAN_LATENCY_RESULT_PARAMS_V1, 1)
+#define NV_VULKAN_LATENCY_RESULT_PARAMS_VER           NV_VULKAN_LATENCY_RESULT_PARAMS_VER1
+
+//! SUPPORTED OS:  Windows 10 and higher
+//!
+#if defined(__cplusplus) && defined(_WINNT_)
+///////////////////////////////////////////////////////////////////////////////
+//
+// FUNCTION NAME: NvAPI_Vulkan_GetLatency
+//
+// !!** DEPRECATED, please use VK_NV_low_latency2 instead **!!
+//! \deprecated  Do not use this function - it is deprecated in release 565.
+//
+//!   DESCRIPTION: Get a latency report including the timestamps of the 
+//!   application latency markers set with NvAPI_Vulkan_SetLatencyMarker as well
+//!   as driver, OS queue and graphics hardware times.  Requires calling
+//!   NvAPI_Vulkan_SetLatencyMarker with incrementing frameID for valid results.
+//!   Rendering for at least 90 frames is recommended to properly fill out the
+//!   structure.  The newest completed frame is at the end (element 63) and
+//!   is preceeded by older frames.  If not enough frames are valid then all
+//!   frames are returned with all zeroes.
+//!
+//! \since Release: 455
+//! \param [in] vkDevice                      The Vulkan device handle
+//! \param [inout] pGetLatencyParams          The latency result structure.
+//! SUPPORTED OS:  Windows 10 and higher
+//!
+//!
+//! \return This API can return any of the error codes enumerated in #NvAPI_Status.
+//!         If there are return error codes with specific meaning for this API, they are listed below.
+//!
+//! \ingroup oglapi
+///////////////////////////////////////////////////////////////////////////////
+__nvapi_deprecated_function("Do not use this function - it is deprecated in release 565.")
+NVAPI_INTERFACE NvAPI_Vulkan_GetLatency(__in HANDLE vkDevice, __inout NV_VULKAN_LATENCY_RESULT_PARAMS* pGetLatencyParams);
+#endif // defined(__cplusplus) && defined(_WINNT_)
+
+//! SUPPORTED OS:  Windows 10 and higher
+//!
+//! Used define latency marker type
+//! \ingroup oglapi
+typedef enum
+{
+    VULKAN_SIMULATION_START        =         0,
+    VULKAN_SIMULATION_END          =         1,
+    VULKAN_RENDERSUBMIT_START      =         2,
+    VULKAN_RENDERSUBMIT_END        =         3,
+    VULKAN_PRESENT_START           =         4,
+    VULKAN_PRESENT_END             =         5,
+    VULKAN_INPUT_SAMPLE            =         6,
+    VULKAN_TRIGGER_FLASH           =         7,
+    VULKAN_PC_LATENCY_PING         =         8,
+    VULKAN_OUT_OF_BAND_RENDERSUBMIT_START =  9,
+    VULKAN_OUT_OF_BAND_RENDERSUBMIT_END   = 10,
+    VULKAN_OUT_OF_BAND_PRESENT_START      = 11,
+    VULKAN_OUT_OF_BAND_PRESENT_END        = 12,
+} NV_VULKAN_LATENCY_MARKER_TYPE;
+
+//! SUPPORTED OS:  Windows 10 and higher
+//!
+//! Used set latency markers
+//! \ingroup oglapi
+typedef struct _NV_VULKAN_LATENCY_MARKER_PARAMS
+{
+    NvU32  version;                                       //!< (IN) Structure version
+    NvU64  frameID;
+    NV_VULKAN_LATENCY_MARKER_TYPE markerType;
+    NvU8   rsvd[64];
+} NV_VULKAN_LATENCY_MARKER_PARAMS_V1;
+
+typedef NV_VULKAN_LATENCY_MARKER_PARAMS_V1            NV_VULKAN_LATENCY_MARKER_PARAMS;
+#define NV_VULKAN_LATENCY_MARKER_PARAMS_VER1          MAKE_NVAPI_VERSION(NV_VULKAN_LATENCY_MARKER_PARAMS_V1, 1)
+#define NV_VULKAN_LATENCY_MARKER_PARAMS_VER           NV_VULKAN_LATENCY_MARKER_PARAMS_VER1
+
+//! SUPPORTED OS:  Windows 10 and higher
+//!
+#if defined(__cplusplus) && defined(_WINNT_)
+///////////////////////////////////////////////////////////////////////////////
+//
+// FUNCTION NAME: NvAPI_Vulkan_SetLatencyMarker
+//
+// !!** DEPRECATED, please use VK_NV_low_latency2 instead **!!
+//! \deprecated  Do not use this function - it is deprecated in release 565.
+//
+//!   DESCRIPTION: Set a latency marker to be tracked by the
+//!   NvAPI_Vulkan_GetLatency function. SIMULATION_START must be the first marker
+//!   sent in a frame, after the previous frame's Sleep call (if used).
+//!   INPUT_SAMPLE may be sent to record the moment user input was sampled and
+//!   should come between SIMULATION_START and SIMULATION_END.
+//!   RENDERSUBMIT_START should come before any Vulkan API calls are made for
+//!   the given frame and RENDERSUBMIT_END should come before calling Present.
+//!   PRESENT_START and END should wrap the Present call to inform the driver
+//!   of a present block done by the OS before the driver receives the Present.
+//!   TRIGGER_FLASH tells the driver to render its flash indicator for latency
+//!   testing, typically driven by a mouse click.
+//!   The frameID can start at an abitrary moment in the application lifetime
+//!   but must strictly increment from that point forward for consistent results.
+
+//!
+//! \since Release: 455
+//! \param [in] vkDevice                      The Vulkan device handle
+//! \param [in] pSetLatencyMarkerParams       The latency marker structure
+//! SUPPORTED OS:  Windows 10 and higher
+//!
+//!
+//! \return This API can return any of the error codes enumerated in #NvAPI_Status.
+//!         If there are return error codes with specific meaning for this API, they are listed below.
+//!
+//! \ingroup oglapi
+///////////////////////////////////////////////////////////////////////////////
+__nvapi_deprecated_function("Do not use this function - it is deprecated in release 565.")
+NVAPI_INTERFACE NvAPI_Vulkan_SetLatencyMarker(__in HANDLE vkDevice, __in NV_VULKAN_LATENCY_MARKER_PARAMS* pSetLatencyMarkerParams);
+#endif // defined(__cplusplus) && defined(_WINNT_)
+
+//! SUPPORTED OS:  Windows 10 and higher
+//!
+//! Used in NvAPI_Vulkan_NotifyOutOfBandVkQueue
+//! \ingroup oglapi
+typedef enum
+{
+    VULKAN_OUT_OF_BAND_QUEUE_TYPE_RENDER  = 0,
+    VULKAN_OUT_OF_BAND_QUEUE_TYPE_PRESENT = 1,
+} NV_VULKAN_OUT_OF_BAND_QUEUE_TYPE;
+
+#if defined(__cplusplus) && defined(_WINNT_)
+///////////////////////////////////////////////////////////////////////////////
+//
+// FUNCTION NAME: NvAPI_Vulkan_NotifyOutOfBandVkQueue
+//
+// !!** DEPRECATED, please use VK_NV_low_latency2 instead **!!
+//! \deprecated  Do not use this function - it is deprecated in release 565.
+//
+//!   DESCRIPTION: Notifies the driver that this command queue runs out of band
+//!                from the application's frame cadence.
+//!
+//! \since Release: 520
+//! \param [in] vkDevice           The Vulkan device handle
+//! \param [in] queueHandle        The VkQueue
+//! \param [in] queueType          The type of out of band VkQueue
+//! SUPPORTED OS:  Windows 10 and higher
+//!
+//!
+//! \return This API can return any of the error codes enumerated in #NvAPI_Status.
+//!         If there are return error codes with specific meaning for this API, they are listed below.
+//!
+//! \ingroup oglapi
+///////////////////////////////////////////////////////////////////////////////
+__nvapi_deprecated_function("Do not use this function - it is deprecated in release 565.")
+NVAPI_INTERFACE NvAPI_Vulkan_NotifyOutOfBandVkQueue(__in HANDLE vkDevice, __in HANDLE queueHandle, __in NV_VULKAN_OUT_OF_BAND_QUEUE_TYPE queueType);
+#endif // defined(__cplusplus) && defined(_WINNT_)
 
 
 //! \addtogroup drsapi
