@@ -25,7 +25,7 @@
 \*********************************************************************************************************/
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
-// Date: Dec 17, 2024 
+// Date: Jan 30, 2025 
 // File: nvapi.h
 //
 // NvAPI provides an interface to NVIDIA devices. This file contains the 
@@ -2752,6 +2752,7 @@ typedef enum _NV_GPU_ARCHITECTURE_ID
     NV_GPU_ARCHITECTURE_TU100 = 0x00000160,
     NV_GPU_ARCHITECTURE_GA100 = 0x00000170,
     NV_GPU_ARCHITECTURE_AD100 = 0x00000190,
+    NV_GPU_ARCHITECTURE_GB200 = 0x000001B0,
 
 }NV_GPU_ARCHITECTURE_ID;
 
@@ -2853,6 +2854,8 @@ typedef enum _NV_GPU_ARCH_IMPLEMENTATION_ID
     NV_GPU_ARCH_IMPLEMENTATION_AD102  = 0x00000002,
     NV_GPU_ARCH_IMPLEMENTATION_AD103  = 0x00000003,
     NV_GPU_ARCH_IMPLEMENTATION_AD104  = 0x00000004,
+
+    NV_GPU_ARCH_IMPLEMENTATION_GB202        = 0x00000002,
 
 }NV_GPU_ARCH_IMPLEMENTATION_ID;
 
@@ -3854,11 +3857,12 @@ NVAPI_INTERFACE NvAPI_GPU_GetScanoutWarpingState(__in NvU32 displayId, __inout N
 
 typedef enum
 {
-    NV_GPU_SCANOUT_COMPOSITION_PARAMETER_WARPING_RESAMPLING_METHOD      = 0
+    NV_GPU_SCANOUT_COMPOSITION_PARAMETER_WARPING_RESAMPLING_METHOD      = 0,
+    NV_GPU_SCANOUT_COMPOSITION_PARAMETER_SCANOUT_INTENSITY_METHOD       = 1
 } NV_GPU_SCANOUT_COMPOSITION_PARAMETER;
 
-//! This enum defines a collection of possible scanout composition values that can be used to configure
-//! possible scanout composition settings.  (Currently the only parameter defined is the WARPING_RESAMPLING_METHOD).
+//! This enum defines a collection of scanout composition values that can be used to configure
+//! the supported scanout composition settings
 typedef enum
 {
     NV_GPU_SCANOUT_COMPOSITION_PARAMETER_SET_TO_DEFAULT = 0,                                  // Set parameter to default value.
@@ -3869,15 +3873,17 @@ typedef enum
     NV_GPU_SCANOUT_COMPOSITION_PARAMETER_VALUE_WARPING_RESAMPLING_METHOD_BICUBIC_BSPLINE                = 0x103,
     NV_GPU_SCANOUT_COMPOSITION_PARAMETER_VALUE_WARPING_RESAMPLING_METHOD_BICUBIC_ADAPTIVE_TRIANGULAR    = 0x104,
     NV_GPU_SCANOUT_COMPOSITION_PARAMETER_VALUE_WARPING_RESAMPLING_METHOD_BICUBIC_ADAPTIVE_BELL_SHAPED   = 0x105,
-    NV_GPU_SCANOUT_COMPOSITION_PARAMETER_VALUE_WARPING_RESAMPLING_METHOD_BICUBIC_ADAPTIVE_BSPLINE       = 0x106
+    NV_GPU_SCANOUT_COMPOSITION_PARAMETER_VALUE_WARPING_RESAMPLING_METHOD_BICUBIC_ADAPTIVE_BSPLINE       = 0x106,
+    // SCANOUT_INTENSITY_METHOD section:
+    NV_GPU_SCANOUT_COMPOSITION_PARAMETER_VALUE_SCANOUT_INTENSITY_NO_GAMMA                               = 0x200,
+    NV_GPU_SCANOUT_COMPOSITION_PARAMETER_VALUE_SCANOUT_INTENSITY_COLOR_GAMMA                            = 0x201,
+    NV_GPU_SCANOUT_COMPOSITION_PARAMETER_VALUE_SCANOUT_INTENSITY_COLOR_AND_OFFSET_GAMMA                 = 0x202,
 } NV_GPU_SCANOUT_COMPOSITION_PARAMETER_VALUE;
 
 ///////////////////////////////////////////////////////////////////////////////
 // FUNCTION NAME: NvAPI_GPU_SetScanoutCompositionParameter
 //
 //!   DESCRIPTION: This API sets various parameters that configure the scanout composition feature on the specified display.
-//!                (currently there is only one configurable parameter defined: WARPING_RESAMPLING_METHOD,
-//!                 but this function is designed to support the addition of parameters as needed.)
 //!
 //! SUPPORTED OS:  Windows 10 and higher
 //!
@@ -3885,7 +3891,13 @@ typedef enum
 //! \param [in]    displayId               Combined physical display and GPU identifier of the display to apply the intensity control
 //! \param [in]    parameter               The scanout composition parameter to be set
 //! \param [in]    parameterValue          The data to be set for the specified parameter
-//! \param [in]    pContainer              Additional container for data associated with the specified parameter
+//! \param [in]    pContainer              Additional container for data associated with the specified parameter. If parameterValue
+//!                                        is WARPING_RESAMPLING_METHOD, pContainer is not in use. If parameterValue is SCANOUT_INTENSITY_METHOD,
+//!                                        pContainer is a pointer to a floating-point value, in the range of (0.0f, 5.0f], which specifies the
+//!                                        gamma vallue used in the gamma and degamma calculation. If pContainer data is NULL and parameterValue is
+//!                                        NV_GPU_SCANOUT_COMPOSITION_PARAMETER_VALUE_SCANOUT_INTENSITY_COLOR_GAMMA or
+//!                                        NV_GPU_SCANOUT_COMPOSITION_PARAMETER_VALUE_SCANOUT_INTENSITY_COLOR_AND_OFFSET_GAMMA,
+//!                                        the default gamma value used in driver implementation is 2.2f
 //!
 //! \retval ::NVAPI_INVALID_ARGUMENT Invalid input parameters.
 //! \retval ::NVAPI_API_NOT_INITIALIZED NvAPI not initialized.
@@ -4572,6 +4584,112 @@ typedef NVLINK_GET_STATUS_V2   NVLINK_GET_STATUS;
 ///////////////////////////////////////////////////////////////////////////////
 NVAPI_INTERFACE NvAPI_GPU_NVLINK_GetStatus(__in NvPhysicalGpuHandle hPhysicalGpu, __inout NVLINK_GET_STATUS* statusParams);
 
+
+
+typedef struct _NV_ENCODER_STATISTICS_V1
+{
+    NvU32 version;                       //!< [in]  Structure version value.
+    NvU32 sessionsCount;                 //!< [out] Count of active encoder sessions.
+    NvU32 averageFps;                    //!< [out] Trailing average FPS of all active sessions.
+    NvU32 averageLatency;                //!< [out] Encode latency in milliseconds.
+} NV_ENCODER_STATISTICS_V1;
+
+typedef NV_ENCODER_STATISTICS_V1    NV_ENCODER_STATISTICS;
+
+#define NV_ENCODER_STATISTICS_VER1  MAKE_NVAPI_VERSION(NV_ENCODER_STATISTICS_V1, 1)
+#define NNV_ENCODER_STATISTICS_VER  NV_ENCODER_STATISTICS_VER1
+
+
+///////////////////////////////////////////////////////////////////////////////
+//!
+//! FUNCTION NAME: NvAPI_GPU_GetEncoderStatistics
+//!
+//!   DESCRIPTION: This API can be used to get encoder statistics for the specified Nvidia GPU.
+//!
+//! SUPPORTED OS:  Windows 10 and higher
+//!
+//!
+//! TCC_SUPPORTED
+//!
+//! MCDM_SUPPORTED
+//!
+//! \since Release: 384
+//!
+//! \param [in]     hPhysicalGpu        - Handle of the Nvidia GPU.
+//! \param [in,out] pEncoderStatistics  - Pointer to the structure containing encoder statistics data.
+//!
+//! RETURN STATUS: This API can return any of the error codes enumerated in #NvAPI_Status.
+//!                If there are return error codes with specific meaning for this API, they are listed below.
+//!                (None)
+//!
+//! \ingroup gpu
+///////////////////////////////////////////////////////////////////////////////
+NVAPI_INTERFACE NvAPI_GPU_GetEncoderStatistics(__in NvPhysicalGpuHandle hPhysicalGpu, __inout NV_ENCODER_STATISTICS *pEncoderStatistics);
+
+
+typedef enum _NV_ENCODER_TYPE
+{
+    NV_ENCODER_H264,
+    NV_ENCODER_HEVC,
+
+    NV_ENCODER_UNKNOWN = 0xFFFFFFFF,
+}NV_ENCODER_TYPE;
+
+typedef struct _NV_ENCODER_PER_SESSION_INFO_V1
+{
+    NvU32             sessionId;                   //!< Unique session ID.
+    NvU32             processId;                   //!< Owning process ID.
+    NvU32             vgpuInstance;                //!< Owning vGPU instance ID (only valid on vGPU hosts, otherwise zero).
+    NV_ENCODER_TYPE   codecType;                   //!< Video encoder type.
+    NvU32             hResolution;                 //!< Current encode horizontal resolution.
+    NvU32             vResolution;                 //!< Current encode vertical resolution.
+    NvU32             averageEncodeFps;            //!< Moving average encode frames per second.
+    NvU32             averageEncodeLatency;        //!< Moving average encode latency in milliseconds.
+}NV_ENCODER_PER_SESSION_INFO_V1;
+
+#define NV_ENCODER_SESSION_INFO_MAX_ENTRIES_V1             0x200  //!< 512 entries.
+
+typedef struct _NV_ENCODER_SESSIONS_INFO_V1
+{
+    NvU32                          version;           //!< [in] Structure version value.
+
+    NvU32                          sessionsCount;     //!< [out] Count of active encoder sessions.
+    NV_ENCODER_PER_SESSION_INFO_V1 *pSessionInfo;     //!< [out] Array of session info. Caller should allocate memory for this field before making 
+                                                      //!< the NvAPI_GPU_GetEncoderSessionsInfo() call, memory allocated should be of 
+                                                      //!< size = sizeof(NV_ENCODER_PER_SESSION_INFO_V1) * NV_ENCODER_SESSION_INFO_MAX_ENTRIES_V1.
+} NV_ENCODER_SESSIONS_INFO_V1;
+
+typedef NV_ENCODER_SESSIONS_INFO_V1    NV_ENCODER_SESSIONS_INFO;
+
+#define NV_ENCODER_SESSIONS_INFO_VER1  MAKE_NVAPI_VERSION(NV_ENCODER_SESSIONS_INFO_V1, 1)
+#define NV_ENCODER_SESSIONS_INFO_VER   NV_ENCODER_SESSIONS_INFO_VER1
+
+
+///////////////////////////////////////////////////////////////////////////////
+//!
+//! FUNCTION NAME: NvAPI_GPU_GetEncoderSessionsInfo
+//!
+//!   DESCRIPTION: This API can be used to retrieve information about active encoder sessions on the specified GPU.
+//!
+//! SUPPORTED OS:  Windows 10 and higher
+//!
+//!
+//! TCC_SUPPORTED
+//!
+//! MCDM_SUPPORTED
+//!
+//! \since Release: 384
+//!
+//! \param [in]     hPhysicalGpu          - Handle of the Nvidia GPU.
+//! \param [in,out] pEncoderSessionsInfo  - Pointer to the structure containing information related to encoder sessions.
+//!
+//! RETURN STATUS: This API can return any of the error codes enumerated in #NvAPI_Status.
+//!                If there are return error codes with specific meaning for this API, they are listed below.
+//!                (None)
+//!
+//! \ingroup gpu
+///////////////////////////////////////////////////////////////////////////////
+NVAPI_INTERFACE NvAPI_GPU_GetEncoderSessionsInfo(__in NvPhysicalGpuHandle hPhysicalGpu, __inout NV_ENCODER_SESSIONS_INFO *pEncoderSessionsInfo);
 
 typedef struct _NV_GPU_INFO_V1
 {
@@ -8820,9 +8938,11 @@ NVAPI_INTERFACE NvAPI_DISP_SetAdaptiveSyncData(__in NvU32 displayId, __in NV_SET
 
 typedef struct _NV_GET_VIRTUAL_REFRESH_RATE_DATA_V1
 {
-    NvU32  version ;                      //!< [in]    structure version
+    NvU32  version;                       //!< [in]    structure version
     NvU32  frameIntervalUs;               //!< [out]   frame interval in micro seconds if Virtual RR is currently applied
-    NvU32  reservedEx[8];                 //!< reserved for future use.
+    NvU32  rrx1k;                         //!< [out]   Refresh Rate * 1000
+    NvU32  bIsGamingVrr;                     //!< [out]   If the content is Gaming
+    NvU32  reservedEx[6];                 //!< reserved for future use.
 } NV_GET_VIRTUAL_REFRESH_RATE_DATA_V1;
 
 #define NV_GET_VIRTUAL_REFRESH_RATE_DATA_VER1  MAKE_NVAPI_VERSION(_NV_GET_VIRTUAL_REFRESH_RATE_DATA_V1,1)
@@ -8854,9 +8974,11 @@ NVAPI_INTERFACE NvAPI_DISP_GetVirtualRefreshRateData(__in NvU32 displayId, __ino
 
 typedef struct _NV_SET_VIRTUAL_REFRESH_RATE_DATA_V1
 {
-    NvU32  version ;                      //!< [in]   structure version
+    NvU32  version;                       //!< [in]   structure version
     NvU32  frameIntervalUs;               //!< [in]   frame interval in micro seconds if Virtual RR is currently applied
-    NvU32  reservedEx[8];                 //!< reserved for future use.
+    NvU32  rrx1k;                         //!< [in]   Refresh Rate * 1000
+    NvU32  bIsGamingVrr;                     //!< [in]   If the content is Gaming
+    NvU32  reservedEx[6];                 //!< reserved for future use.
 } NV_SET_VIRTUAL_REFRESH_RATE_DATA_V1;
 
 #define NV_SET_VIRTUAL_REFRESH_RATE_DATA_VER1  MAKE_NVAPI_VERSION(_NV_SET_VIRTUAL_REFRESH_RATE_DATA_V1,1)
@@ -18035,7 +18157,8 @@ typedef struct _NV_ASYNC_FRAME_MARKER_PARAMS_V1
     NvU64  frameID;
     NV_LATENCY_MARKER_TYPE markerType;
     NvU64  presentFrameID;
-    NvU8   rsvd[56];
+    NvBool vendorInternal;
+    NvU8   rsvd[55];
 } NV_ASYNC_FRAME_MARKER_PARAMS_V1;
 
 typedef NV_ASYNC_FRAME_MARKER_PARAMS_V1     NV_ASYNC_FRAME_MARKER_PARAMS;
@@ -18093,6 +18216,7 @@ typedef enum
     OUT_OF_BAND_RENDER  = 0,
     OUT_OF_BAND_PRESENT = 1,
     OUT_OF_BAND_IGNORE  = 2,
+    OUT_OF_BAND_RENDER_PRESENT = 3,
 } NV_OUT_OF_BAND_CQ_TYPE;
 
 #if defined(__cplusplus) && defined(__d3d12_h__)
@@ -18145,20 +18269,19 @@ NVAPI_INTERFACE NvAPI_D3D12_SetCreateCommandQueueLowLatencyHint(__in ID3D12Devic
 //!
 typedef struct NVAPI_D3D12_CREATE_CUBIN_SHADER_PARAMS
 {
-    size_t structSizeIn;                            //!< [in]  Caller's version of input params
-    size_t structSizeOut;                           //!< [out] Driver's version of input params
+    size_t              structSizeIn;
+    size_t              structSizeOut;
 
-    ID3D12Device*       pDevice;                    //!< [in] pointer to ID3D12Device object
-    const void*         pCubin;                     //!< [in] pointer to blob containing the cubin
-    NvU32               size;                       //!< [in] size of pCubin blob in bytes
-    NvU32               blockX;                     //!< [in] size of CTA / thread block/group
-    NvU32               blockY;                     //!< [in] 
-    NvU32               blockZ;                     //!< [in] 
-    NvU32               dynSharedMemBytes;          //!< [in] dynamic shared memory required by the shader in bytes
-    const char*         pShaderName;                //!< [in] pointer to shader name, acts as identifier for SLI special handling, doesn't need to be accurate
-    NvU32               flags;                      //!< [in] reserved, set to 0
-    NVDX_ObjectHandle   hShader;                    //!< [out] variable that receives the handle to the created shader.
-
+    ID3D12Device*       pDevice;
+    const void*         pCubin;
+    NvU32               size;
+    NvU32               blockX;
+    NvU32               blockY; 
+    NvU32               blockZ; 
+    NvU32               dynSharedMemBytes;
+    const char*         pShaderName;
+    NvU32               flags;
+    NVDX_ObjectHandle   hShader;
 } NVAPI_D3D12_CREATE_CUBIN_SHADER_PARAMS;
 
 NVAPI_INTERFACE NvAPI_D3D12_CreateCubinComputeShaderExV2(__inout NVAPI_D3D12_CREATE_CUBIN_SHADER_PARAMS* pParams);
@@ -18225,14 +18348,13 @@ NVAPI_INTERFACE NvAPI_D3D12_DestroyCubinComputeShader(__in  ID3D12Device*       
 
 typedef struct NVAPI_D3D12_GET_CUDA_MERGED_TEXTURE_SAMPLER_OBJECT_PARAMS
 {
-    size_t structSizeIn;                            //!< [in]  Caller's version of input params
-    size_t structSizeOut;                           //!< [out] Driver's version of input params
+    size_t                       structSizeIn;
+    size_t                       structSizeOut;
 
-    ID3D12Device*                pDevice;           //!< [in] pointer to ID3D12Device object
-    D3D12_CPU_DESCRIPTOR_HANDLE  texDesc;           //!< [in] CPU descriptor handle of the texture (SRV)
-    D3D12_CPU_DESCRIPTOR_HANDLE  smpDesc;           //!< [in] CPU descriptor handle of the sampler (set to 0 if sampler isn't required)
-    NvU64                        textureHandle;     //!< [out] A variable that receives the driver handle
-
+    ID3D12Device*                pDevice;
+    D3D12_CPU_DESCRIPTOR_HANDLE  texDesc;
+    D3D12_CPU_DESCRIPTOR_HANDLE  smpDesc;
+    NvU64                        textureHandle;
 } NVAPI_D3D12_GET_CUDA_MERGED_TEXTURE_SAMPLER_OBJECT_PARAMS;
 
 NVAPI_INTERFACE NvAPI_D3D12_GetCudaMergedTextureSamplerObject(__inout NVAPI_D3D12_GET_CUDA_MERGED_TEXTURE_SAMPLER_OBJECT_PARAMS* pParams);
@@ -18245,19 +18367,17 @@ typedef enum _NVAPI_D3D12_GET_CUDA_INDEPENDENT_DESCRIPTOR_OBJECT_TYPE
     NVAPI_D3D12_GET_CUDA_INDEPENDENT_DESCRIPTOR_OBJECT_SURFACE = 0,
     NVAPI_D3D12_GET_CUDA_INDEPENDENT_DESCRIPTOR_OBJECT_TEXTURE = 1,
     NVAPI_D3D12_GET_CUDA_INDEPENDENT_DESCRIPTOR_OBJECT_SAMPLER = 2,
-
 } NVAPI_D3D12_GET_CUDA_INDEPENDENT_DESCRIPTOR_OBJECT_TYPE;
 
 typedef struct NVAPI_D3D12_GET_CUDA_INDEPENDENT_DESCRIPTOR_OBJECT_PARAMS
 {
-    size_t structSizeIn;                                                //!< [in]  Caller's version of input params
-    size_t structSizeOut;                                               //!< [out] Driver's version of input params
+    size_t                                                  structSizeIn;
+    size_t                                                  structSizeOut;
 
-    ID3D12Device*                                           pDevice;    //!< [in]  Pointer to ID3D12Device object
-    NVAPI_D3D12_GET_CUDA_INDEPENDENT_DESCRIPTOR_OBJECT_TYPE type;       //!< [in]  Type of the descriptor
-    D3D12_CPU_DESCRIPTOR_HANDLE                             desc;       //!< [in]  CPU descriptor handle of the UAV
-    NvU64                                                   handle;     //!< [out] A pointer to memory that receives the driver handle
-
+    ID3D12Device*                                           pDevice;
+    NVAPI_D3D12_GET_CUDA_INDEPENDENT_DESCRIPTOR_OBJECT_TYPE type;
+    D3D12_CPU_DESCRIPTOR_HANDLE                             desc;
+    NvU64                                                   handle;
 } NVAPI_D3D12_GET_CUDA_INDEPENDENT_DESCRIPTOR_OBJECT_PARAMS;
 
 NVAPI_INTERFACE NvAPI_D3D12_GetCudaIndependentDescriptorObject(__inout NVAPI_D3D12_GET_CUDA_INDEPENDENT_DESCRIPTOR_OBJECT_PARAMS* pParams);
@@ -18368,6 +18488,31 @@ NVAPI_INTERFACE NvAPI_D3D12_DestroyCuFunction(__in  ID3D12Device*       pDevice,
 #endif //if defined (__cplusplus) && defined(__d3d12_h__)
 
 
+// Experimental API for internal use. DO NOT USE!
+#if defined (__cplusplus) && defined(__d3d11_h__)
+//! SUPPORTED OS:  Windows 10 and higher
+//!
+typedef struct NVAPI_D3D11_CREATE_CUBIN_SHADER_PARAMS
+{
+    size_t              structSizeIn;
+    size_t              structSizeOut;
+
+    ID3D11Device*       pDevice;
+    const void*         pCubin;
+    NvU32               size;
+    NvU32               blockX;
+    NvU32               blockY; 
+    NvU32               blockZ; 
+    NvU32               dynSharedMemBytes;
+    const char*         pShaderName;
+    NvU32               flags;
+    NVDX_ObjectHandle   hShader;
+} NVAPI_D3D11_CREATE_CUBIN_SHADER_PARAMS;
+
+NVAPI_INTERFACE NvAPI_D3D11_CreateCubinComputeShaderExV2(__inout NVAPI_D3D11_CREATE_CUBIN_SHADER_PARAMS* pParams);
+
+#endif //if defined (__cplusplus) && defined(__d3d11_h__)
+
 #if defined (__cplusplus) && defined(__d3d11_h__)
 
 // Experimental API for internal use. DO NOT USE!
@@ -18437,6 +18582,73 @@ NVAPI_INTERFACE NvAPI_D3D11_IsFatbinPTXSupported(__in  ID3D11Device *pDevice,
 // Experimental API for internal use. DO NOT USE!
 //! SUPPORTED OS:  Windows 10 and higher
 //!
+typedef enum _NVAPI_D3D11_GET_CUDA_INDEPENDENT_VIEW_OBJECT_TYPE
+{
+    NVAPI_D3D11_GET_CUDA_INDEPENDENT_VIEW_OBJECT_SURFACE = 0,
+    NVAPI_D3D11_GET_CUDA_INDEPENDENT_VIEW_OBJECT_TEXTURE = 1,
+    NVAPI_D3D11_GET_CUDA_INDEPENDENT_VIEW_OBJECT_SAMPLER = 2,
+
+} NVAPI_D3D11_GET_CUDA_INDEPENDENT_VIEW_OBJECT_TYPE;
+
+typedef struct _NVAPI_D3D11_GET_CUDA_VIEW_OBJECT
+{
+    union
+    {
+        struct
+        {
+            const D3D11_UNORDERED_ACCESS_VIEW_DESC*  pUavDesc;
+            ID3D11UnorderedAccessView*               pUAV;
+        } uav;
+        struct
+        {
+            const D3D11_SHADER_RESOURCE_VIEW_DESC*   pSrvDesc;
+            ID3D11ShaderResourceView*                pSRV;
+        } srv;
+        struct
+        {
+            const D3D11_SAMPLER_DESC*                pSamplerDesc;
+            ID3D11SamplerState*                      pSampler;
+        } sampler;
+    };
+} NVAPI_D3D11_GET_CUDA_VIEW_OBJECT;
+
+typedef struct NVAPI_D3D11_GET_CUDA_INDEPENDENT_VIEW_OBJECT_PARAMS
+{
+    size_t                                             structSizeIn;
+    size_t                                             structSizeOut;
+
+    ID3D11Device*                                      pDevice;
+    ID3D11Resource*                                    pResource;
+    NVAPI_D3D11_GET_CUDA_INDEPENDENT_VIEW_OBJECT_TYPE  type;
+    NVAPI_D3D11_GET_CUDA_VIEW_OBJECT                   desc;
+    NvU64                                              handle;
+} NVAPI_D3D11_GET_CUDA_INDEPENDENT_VIEW_OBJECT_PARAMS;
+
+NVAPI_INTERFACE NvAPI_D3D11_GetCudaIndependentViewObject(__inout NVAPI_D3D11_GET_CUDA_INDEPENDENT_VIEW_OBJECT_PARAMS* pParams);
+
+
+// Experimental API for internal use. DO NOT USE!
+//! SUPPORTED OS:  Windows 10 and higher
+//!
+
+typedef struct NVAPI_D3D11_GET_CUDA_MERGED_TEXTURE_SAMPLER_OBJECT_PARAMS
+{
+    size_t                              structSizeIn;
+    size_t                              structSizeOut;
+
+    ID3D11Device*                       pDevice;
+    ID3D11Resource*                     pResource;
+    NVAPI_D3D11_GET_CUDA_VIEW_OBJECT    texDesc;
+    NVAPI_D3D11_GET_CUDA_VIEW_OBJECT    samplerDesc;
+    NvU64                               handle;
+} NVAPI_D3D11_GET_CUDA_MERGED_TEXTURE_SAMPLER_OBJECT_PARAMS;
+
+NVAPI_INTERFACE NvAPI_D3D11_GetCudaMergedTextureSamplerObject(__inout NVAPI_D3D11_GET_CUDA_MERGED_TEXTURE_SAMPLER_OBJECT_PARAMS* pParams);
+
+
+// Experimental API for internal use. DO NOT USE!
+//! SUPPORTED OS:  Windows 10 and higher
+//!
 NVAPI_INTERFACE NvAPI_D3D11_CreateUnorderedAccessView(__in   ID3D11Device*                            pDevice,
                                                       __in   ID3D11Resource*                          pResource,
                                                       __in   const D3D11_UNORDERED_ACCESS_VIEW_DESC*  pDesc,
@@ -18459,7 +18671,7 @@ NVAPI_INTERFACE NvAPI_D3D11_CreateSamplerState(__in   ID3D11Device*             
                                                __in   const D3D11_SAMPLER_DESC*              pSamplerDesc,
                                                __out  ID3D11SamplerState**                   ppSamplerState,
                                                __out  NvU32*                                 pDriverHandle);
-                                                  
+
 // Experimental API for internal use. DO NOT USE!
 //! SUPPORTED OS:  Windows 10 and higher
 //!
@@ -18510,6 +18722,50 @@ typedef enum _NVAPI_D3D12_RAYTRACING_DISPLACEMENT_MICROMAP_CAPS
     NVAPI_D3D12_RAYTRACING_DISPLACEMENT_MICROMAP_CAP_STANDARD = NV_BIT(0)  //!< Standard Displacement Micromap support is available
 } NVAPI_D3D12_RAYTRACING_DISPLACEMENT_MICROMAP_CAPS;
 
+//! Flags specifying raytracing Cluster Operation support.
+//! Additional flags will be added as support becomes available.
+//!
+//! \ingroup dx
+typedef enum _NVAPI_D3D12_RAYTRACING_CLUSTER_OPERATIONS_CAPS
+{
+    NVAPI_D3D12_RAYTRACING_CLUSTER_OPERATIONS_CAP_NONE     = 0x0,       //!< Cluster Operations support is not available.
+                                                                        //!< The application must not attempt to use any Cluster Operations entrypoints or flags.
+    NVAPI_D3D12_RAYTRACING_CLUSTER_OPERATIONS_CAP_STANDARD = NV_BIT(0)  //!< Standard Cluster Operations support is available
+} NVAPI_D3D12_RAYTRACING_CLUSTER_OPERATIONS_CAPS;
+
+//! Flags specifying raytracing Partitioned TLAS support.
+//! Additional flags will be added as support becomes available.
+//!
+//! \ingroup dx
+typedef enum _NVAPI_D3D12_RAYTRACING_PARTITIONED_TLAS_CAPS
+{
+    NVAPI_D3D12_RAYTRACING_PARTITIONED_TLAS_CAP_NONE     = 0x0,       //!< Partitioned TLAS support is not available.
+                                                                      //!< The application must not attempt to use any Partitioned TLAS entrypoints or flags.
+    NVAPI_D3D12_RAYTRACING_PARTITIONED_TLAS_CAP_STANDARD = NV_BIT(0)  //!< Standard Partitioned TLAS support is available
+} NVAPI_D3D12_RAYTRACING_PARTITIONED_TLAS_CAPS;
+
+//! Flags specifying raytracing sphere support.
+//! Additional flags will be added as support becomes available.
+//!
+//! \ingroup dx
+typedef enum _NVAPI_D3D12_RAYTRACING_SPHERES_CAP
+{
+    NVAPI_D3D12_RAYTRACING_SPHERES_CAP_NONE     = 0x0,       //!< Sphere primitive support is not available.
+                                                             //!< The application must not attempt to use any sphere geometry.
+    NVAPI_D3D12_RAYTRACING_SPHERES_CAP_STANDARD = NV_BIT(0)  //!< Standard sphere primitive support is available
+} NVAPI_D3D12_RAYTRACING_SPHERES_CAPS;
+
+//! Flags specifying raytracing linear swept sphere (LSS) support.
+//! Additional flags will be added as support becomes available.
+//!
+//! \ingroup dx
+typedef enum _NVAPI_D3D12_RAYTRACING_LINEAR_SWEPT_SPHERES_CAP
+{
+    NVAPI_D3D12_RAYTRACING_LINEAR_SWEPT_SPHERES_CAP_NONE     = 0x0,       //!< Linear swept sphere primitive support is not available.
+                                                                          //!< The application must not attempt to use any linear swept sphere geometry.
+    NVAPI_D3D12_RAYTRACING_LINEAR_SWEPT_SPHERES_CAP_STANDARD = NV_BIT(0)  //!< Standard linear swept sphere primitive support is available
+} NVAPI_D3D12_RAYTRACING_LINEAR_SWEPT_SPHERES_CAPS;
+
 //! List of Raytracing CAPS types that can be queried.
 //!
 //! \ingroup dx
@@ -18518,6 +18774,10 @@ typedef enum _NVAPI_D3D12_RAYTRACING_CAPS_TYPE
     NVAPI_D3D12_RAYTRACING_CAPS_TYPE_THREAD_REORDERING      =  0,
     NVAPI_D3D12_RAYTRACING_CAPS_TYPE_OPACITY_MICROMAP       =  1,
     NVAPI_D3D12_RAYTRACING_CAPS_TYPE_DISPLACEMENT_MICROMAP  =  2,
+    NVAPI_D3D12_RAYTRACING_CAPS_TYPE_CLUSTER_OPERATIONS     =  3,
+    NVAPI_D3D12_RAYTRACING_CAPS_TYPE_PARTITIONED_TLAS       =  4,
+    NVAPI_D3D12_RAYTRACING_CAPS_TYPE_SPHERES                =  5,
+    NVAPI_D3D12_RAYTRACING_CAPS_TYPE_LINEAR_SWEPT_SPHERES   =  6,
     NVAPI_D3D12_RAYTRACING_CAPS_TYPE_INVALID                = -1
 } NVAPI_D3D12_RAYTRACING_CAPS_TYPE;
 
@@ -18813,6 +19073,7 @@ typedef NVAPI_GET_RAYTRACING_DISPLACEMENT_MICROMAP_ARRAY_PREBUILD_INFO_PARAMS_V1
 //!
 //! SUPPORTED OS:  Windows 10 and higher
 //!
+//! \deprecated  Do not use this function - it is deprecated in release 570.
 //!
 //! \since Release: 525
 //!
@@ -18824,6 +19085,7 @@ typedef NVAPI_GET_RAYTRACING_DISPLACEMENT_MICROMAP_ARRAY_PREBUILD_INFO_PARAMS_V1
 //!
 //! \ingroup dx 
 ///////////////////////////////////////////////////////////////////////////////
+__nvapi_deprecated_function("Do not use this function - it is deprecated in release 570.")
 NVAPI_INTERFACE NvAPI_D3D12_GetRaytracingDisplacementMicromapArrayPrebuildInfo(
     __in    ID3D12Device5* pDevice,
     __inout NVAPI_GET_RAYTRACING_DISPLACEMENT_MICROMAP_ARRAY_PREBUILD_INFO_PARAMS* pParams);
@@ -18963,6 +19225,9 @@ typedef enum _NVAPI_D3D12_PIPELINE_CREATION_STATE_FLAGS
     NVAPI_D3D12_PIPELINE_CREATION_STATE_FLAGS_NONE                   = 0,         //!< [in] No pipeline flags.
     NVAPI_D3D12_PIPELINE_CREATION_STATE_FLAGS_ENABLE_OMM_SUPPORT     = NV_BIT(0), //!< [in] Change whether raytracing pipelines are created with support for Opacity Micromaps.
     NVAPI_D3D12_PIPELINE_CREATION_STATE_FLAGS_ENABLE_DMM_SUPPORT     = NV_BIT(1), //!< [in] Change whether raytracing pipelines are created with support for Displacement Micromaps.
+    NVAPI_D3D12_PIPELINE_CREATION_STATE_FLAGS_ENABLE_CLUSTER_SUPPORT = NV_BIT(2), //!< [in] Change whether raytracing pipelines are created with support for Clustered BLAS.
+    NVAPI_D3D12_PIPELINE_CREATION_STATE_FLAGS_ENABLE_SPHERE_SUPPORT  = NV_BIT(3), //!< [in] Change whether raytracing pipelines are created with support for Spheres.
+    NVAPI_D3D12_PIPELINE_CREATION_STATE_FLAGS_ENABLE_LSS_SUPPORT     = NV_BIT(4), //!< [in] Change whether raytracing pipelines are created with support for Linear Swept Spheres (LSS).
 } NVAPI_D3D12_PIPELINE_CREATION_STATE_FLAGS;
 
 //! State used when creating new pipelines.
@@ -19092,7 +19357,6 @@ typedef enum _NVAPI_D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS_EX
     NVAPI_D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_ALLOW_OMM_OPACITY_STATES_UPDATE_EX = NV_BIT(8),  //!< The acceleration structure (AS) supports updating OMM data (encoded opacity values).
                                                                                                               //!< Specifying this flag may reduce traversal performance.
     NVAPI_D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_ALLOW_DATA_ACCESS_EX               = NV_BIT(9),  //!< Allows triangle and micro-triangle data to be accessed through the BLAS via shader intrinsics.
-
 } NVAPI_D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS_EX;
 
 //! This enum extends \c D3D12_RAYTRACING_GEOMETRY_TYPE with additional values.
@@ -19109,6 +19373,10 @@ typedef enum _NVAPI_D3D12_RAYTRACING_GEOMETRY_TYPE_EX
                                                                               //!< The basic triangle type and this OMM-enabled type geometries may be mixed in the same BLAS build.
     NVAPI_D3D12_RAYTRACING_GEOMETRY_TYPE_DMM_TRIANGLES_EX              = 0x3, //!< Triangle geometry with attached DMM data.
                                                                               //!< This geometry cannot be mixed with other geometry types in the same BLAS.
+    NVAPI_D3D12_RAYTRACING_GEOMETRY_TYPE_SPHERES_EX                    = 0x4, //!< This geometry contains sphere primitives.
+                                                                              //!< Cannot be mixed with other geometry types in the same BLAS.
+    NVAPI_D3D12_RAYTRACING_GEOMETRY_TYPE_LSS_EX                        = 0x5, //!< This geometry contains linear swept sphere primitives.
+                                                                              //!< Cannot be mixed with other geometry types in the same BLAS.
 
 } NVAPI_D3D12_RAYTRACING_GEOMETRY_TYPE_EX;
 
@@ -19121,7 +19389,11 @@ typedef enum _NVAPI_D3D12_RAYTRACING_OPACITY_MICROMAP_SPECIAL_INDEX
     NVAPI_D3D12_RAYTRACING_OPACITY_MICROMAP_SPECIAL_INDEX_FULLY_TRANSPARENT         = -1, //!< Uniform transparent OMM state.
     NVAPI_D3D12_RAYTRACING_OPACITY_MICROMAP_SPECIAL_INDEX_FULLY_OPAQUE              = -2, //!< Uniform opaque OMM state.
     NVAPI_D3D12_RAYTRACING_OPACITY_MICROMAP_SPECIAL_INDEX_FULLY_UNKNOWN_TRANSPARENT = -3, //!< Uniform unknown-transparent OMM state.
-    NVAPI_D3D12_RAYTRACING_OPACITY_MICROMAP_SPECIAL_INDEX_FULLY_UNKNOWN_OPAQUE      = -4  //!< Uniform unknown-opaque OMM state.
+    NVAPI_D3D12_RAYTRACING_OPACITY_MICROMAP_SPECIAL_INDEX_FULLY_UNKNOWN_OPAQUE      = -4, //!< Uniform unknown-opaque OMM state.
+
+    NVAPI_D3D12_RAYTRACING_OPACITY_MICROMAP_SPECIAL_INDEX_CLUSTER_SKIP_OMM          = -5, //!< Don't apply any OMM for triangle. Reverts to using the geometry supplied opaque/non-opaque state. This special index is only available for the opacity micromap index buffer supplied to
+                                                                                          //!< NVAPI_D3D12_RAYTRACING_ACCELERATION_STRUCTURE_MULTI_INDIRECT_TRIANGLE_TEMPLATE_ARGS and NVAPI_D3D12_RAYTRACING_ACCELERATION_STRUCTURE_MULTI_INDIRECT_TRIANGLE_CLUSTER_ARGS.
+                                                                                          //!< This state does _not_ require the AS to be built with NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_CLUSTER_FLAG_ALLOW_DISABLE_OMMS, as that only applies to the instance flag.
 } NVAPI_D3D12_RAYTRACING_OPACITY_MICROMAP_SPECIAL_INDEX;
 
 //! Geometry descriptor attachment with Opacity Micromaps.
@@ -19198,6 +19470,67 @@ typedef struct _NVAPI_D3D12_RAYTRACING_GEOMETRY_OMM_TRIANGLES_DESC
     NVAPI_D3D12_RAYTRACING_GEOMETRY_OMM_ATTACHMENT_DESC ommAttachment; //!< Opacity Micromap attachment descriptor.
 } NVAPI_D3D12_RAYTRACING_GEOMETRY_OMM_TRIANGLES_DESC;
 
+//! Sphere geometry descriptor.
+//!
+//! \ingroup dx
+typedef struct _NVAPI_D3D12_RAYTRACING_GEOMETRY_SPHERES_DESC
+{
+    NvU32                                       vertexCount;          //!< The largest valid index plus one.
+    NvU32                                       indexCount;           //!< Number of indices in index buffer.
+
+    D3D12_GPU_VIRTUAL_ADDRESS_AND_STRIDE        vertexPositionBuffer; //!< Vertex position buffer and stride.
+    DXGI_FORMAT                                 vertexPositionFormat; //!< Supports the same formats as the triangle vertex buffers.
+
+    D3D12_GPU_VIRTUAL_ADDRESS_AND_STRIDE        vertexRadiusBuffer;   //!< Vertex radius buffer and stride. Radii must be 0 or greater. The stride can be set to 0 to set a constant radius for all primitives in the geometry.
+    DXGI_FORMAT                                 vertexRadiusFormat;   //!< Supported formats are `DXGI_FORMAT_R32_FLOAT` and `DXGI_FORMAT_R16_FLOAT`.
+
+    D3D12_GPU_VIRTUAL_ADDRESS_AND_STRIDE        indexBuffer;          //!< Indices to positions and radii, one entry per sphere primitive. May be set to NULL to use the list of positions and radii from vertexPositionBuffer and vertexRadiusBuffer.
+    DXGI_FORMAT                                 indexFormat;          //!< Supported formats are `DXGI_FORMAT_R32_UINT`, `DXGI_FORMAT_R16_UINT`, `DXGI_FORMAT_R8_UINT`.
+
+} NVAPI_D3D12_RAYTRACING_GEOMETRY_SPHERES_DESC;
+
+//! Describes the endcap enable/disable behavior of LSS primitives.
+//!
+//! \ingroup dx
+typedef enum _NVAPI_D3D12_RAYTRACING_LSS_ENDCAP_MODE
+{
+    NVAPI_D3D12_RAYTRACING_LSS_ENDCAP_MODE_NONE    = 0, //!< None of the primitives have endcaps enabled. Only midsections may be intersected.
+    NVAPI_D3D12_RAYTRACING_LSS_ENDCAP_MODE_CHAINED = 1, //!< The last primitive in each chain has both endcaps enabled. Preceding primitives within chains only have their first endcap enabled.
+
+} NVAPI_D3D12_RAYTRACING_LSS_ENDCAP_MODE;
+
+//! Describes how LSS primitives are constructed from vertex and index buffer inputs.
+//!
+//! \ingroup dx
+typedef enum _NVAPI_D3D12_RAYTRACING_LSS_PRIMITIVE_FORMAT
+{
+    NVAPI_D3D12_RAYTRACING_LSS_PRIMITIVE_FORMAT_LIST                = 0, //!< Each LSS primitive is defined by a pair of vertices. The index buffer is optional for this format.
+    NVAPI_D3D12_RAYTRACING_LSS_PRIMITIVE_FORMAT_SUCCESSIVE_IMPLICIT = 1, //!< Each LSS is defined by two successive vertices (k, k + 1), where k is the entry in the index buffer. This format requires an index buffer to be supplied in the geometry descriptor.
+
+} NVAPI_D3D12_RAYTRACING_LSS_PRIMITIVE_FORMAT;
+
+//! Linear Swept Sphere (LSS) geometry descriptor.
+//!
+//! \ingroup dx
+typedef struct _NVAPI_D3D12_RAYTRACING_GEOMETRY_LSS_DESC
+{
+    NvU32                                       vertexCount;          //!< The largest valid index plus one.
+    NvU32                                       indexCount;           //!< Number of indices in index buffer.
+    NvU32                                       primitiveCount;       //!< Specifies the total number of primitives (including inactive ones).
+
+    D3D12_GPU_VIRTUAL_ADDRESS_AND_STRIDE        vertexPositionBuffer; //!< Vertex position buffer and stride.
+    DXGI_FORMAT                                 vertexPositionFormat; //!< Supports the same formats as the triangle vertex buffers.
+
+    D3D12_GPU_VIRTUAL_ADDRESS_AND_STRIDE        vertexRadiusBuffer;   //!< Vertex radius buffer and stride. Radii must be 0 or greater. The stride can be set to 0 to set a constant radius for all primitives in the geometry.
+    DXGI_FORMAT                                 vertexRadiusFormat;   //!< Supported formats are `DXGI_FORMAT_R32_FLOAT` and `DXGI_FORMAT_R16_FLOAT`.
+
+    D3D12_GPU_VIRTUAL_ADDRESS_AND_STRIDE        indexBuffer;          //!< Indices to positions and radii, one entry per sphere primitive. May be set to NULL to use the list of positions and radii from vertexPositionBuffer and vertexRadiusBuffer.
+    DXGI_FORMAT                                 indexFormat;          //!< Supported formats are `DXGI_FORMAT_R32_UINT`, `DXGI_FORMAT_R16_UINT`, `DXGI_FORMAT_R8_UINT`.
+
+    NVAPI_D3D12_RAYTRACING_LSS_ENDCAP_MODE      endcapMode;           //!< Specifies which endcaps are enabled and disabled over collections of LSS primitives within the geometry.
+    NVAPI_D3D12_RAYTRACING_LSS_PRIMITIVE_FORMAT primitiveFormat;      //!< Selects how input buffers are to be interpreted to construct LSS primitives.
+
+} NVAPI_D3D12_RAYTRACING_GEOMETRY_LSS_DESC;
 
 //! This structure extends \c D3D12_RAYTRACING_GEOMETRY_DESC by supporting additional geometry types.
 //!
@@ -19215,6 +19548,10 @@ typedef struct _NVAPI_D3D12_RAYTRACING_GEOMETRY_DESC_EX
         NVAPI_D3D12_RAYTRACING_GEOMETRY_OMM_TRIANGLES_DESC ommTriangles; //!< Describes triangle geometry which may optionally use Opacity Micromaps, if \c type is #NVAPI_D3D12_RAYTRACING_GEOMETRY_TYPE_OMM_TRIANGLES_EX.
                                                                          //!< Otherwise, this parameter is unused (space repurposed in a union).
         NVAPI_D3D12_RAYTRACING_GEOMETRY_DMM_TRIANGLES_DESC dmmTriangles; //!< Describes micro-triangle geometry, if \c type is #NVAPI_D3D12_RAYTRACING_GEOMETRY_TYPE_DMM_TRIANGLES_EX.
+                                                                         //!< Otherwise, this parameter is unused (space repurposed in a union).
+        NVAPI_D3D12_RAYTRACING_GEOMETRY_SPHERES_DESC       spheres;      //!< Describes sphere geometry if \c type is #NVAPI_D3D12_RAYTRACING_GEOMETRY_TYPE_SPHERE_EX.
+                                                                         //!< Otherwise, this parameter is unused (space repurposed in a union).
+        NVAPI_D3D12_RAYTRACING_GEOMETRY_LSS_DESC           lss;          //!< Describes linear swept sphere geometry if \c type is #NVAPI_D3D12_RAYTRACING_GEOMETRY_TYPE_LSS_EX.
                                                                          //!< Otherwise, this parameter is unused (space repurposed in a union).
     };
 } NVAPI_D3D12_RAYTRACING_GEOMETRY_DESC_EX;
@@ -19516,6 +19853,7 @@ typedef NVAPI_BUILD_RAYTRACING_DISPLACEMENT_MICROMAP_ARRAY_PARAMS_V1            
 //!
 //! SUPPORTED OS:  Windows 10 and higher
 //!
+//! \deprecated  Do not use this function - it is deprecated in release 570.
 //!
 //! \since Release: 525
 //!
@@ -19529,6 +19867,7 @@ typedef NVAPI_BUILD_RAYTRACING_DISPLACEMENT_MICROMAP_ARRAY_PARAMS_V1            
 //!
 //! \ingroup dx 
 ///////////////////////////////////////////////////////////////////////////////
+__nvapi_deprecated_function("Do not use this function - it is deprecated in release 570.")
 NVAPI_INTERFACE NvAPI_D3D12_BuildRaytracingDisplacementMicromapArray(
     __in ID3D12GraphicsCommandList4* pCommandList,
     __in NVAPI_BUILD_RAYTRACING_DISPLACEMENT_MICROMAP_ARRAY_PARAMS* pParams);
@@ -19558,6 +19897,7 @@ typedef NVAPI_RELOCATE_RAYTRACING_DISPLACEMENT_MICROMAP_ARRAY_PARAMS_V1         
 //!
 //! SUPPORTED OS:  Windows 10 and higher
 //!
+//! \deprecated  Do not use this function - it is deprecated in release 570.
 //!
 //! \since Release: 525
 //!
@@ -19569,6 +19909,7 @@ typedef NVAPI_RELOCATE_RAYTRACING_DISPLACEMENT_MICROMAP_ARRAY_PARAMS_V1         
 //!
 //! \ingroup dx 
 ///////////////////////////////////////////////////////////////////////////////
+__nvapi_deprecated_function("Do not use this function - it is deprecated in release 570.")
 NVAPI_INTERFACE NvAPI_D3D12_RelocateRaytracingDisplacementMicromapArray(
     __in ID3D12GraphicsCommandList4* pCommandList,
     __in const NVAPI_RELOCATE_RAYTRACING_DISPLACEMENT_MICROMAP_ARRAY_PARAMS* pParams);
@@ -19599,6 +19940,7 @@ typedef NVAPI_EMIT_RAYTRACING_DISPLACEMENT_MICROMAP_ARRAY_POSTBUILD_INFO_PARAMS_
 //!
 //! SUPPORTED OS:  Windows 10 and higher
 //!
+//! \deprecated  Do not use this function - it is deprecated in release 570.
 //!
 //! \since Release: 525
 //!
@@ -19610,6 +19952,7 @@ typedef NVAPI_EMIT_RAYTRACING_DISPLACEMENT_MICROMAP_ARRAY_POSTBUILD_INFO_PARAMS_
 //!
 //! \ingroup dx 
 ///////////////////////////////////////////////////////////////////////////////
+__nvapi_deprecated_function("Do not use this function - it is deprecated in release 570.")
 NVAPI_INTERFACE NvAPI_D3D12_EmitRaytracingDisplacementMicromapArrayPostbuildInfo(
     __in ID3D12GraphicsCommandList4* pCommandList,
     __in const NVAPI_EMIT_RAYTRACING_DISPLACEMENT_MICROMAP_ARRAY_POSTBUILD_INFO_PARAMS* pParams);
@@ -19887,6 +20230,858 @@ NVAPI_INTERFACE NvAPI_D3D12_CreateCommittedRDMABuffer(
         __out void **ppRDMAAddress);
 
 #endif //defined(__cplusplus) && defined(__d3d12_h__)
+
+#if defined(__cplusplus) && (defined(__d3d12_h__))
+
+//! Underlying component types of a cooperative vector or matrix
+//! \ingroup dx
+typedef enum NVAPI_COOPERATIVE_VECTOR_COMPONENT_TYPE {
+    NVAPI_COOPERATIVE_VECTOR_COMPONENT_TYPE_FLOAT16      = 0,
+    NVAPI_COOPERATIVE_VECTOR_COMPONENT_TYPE_FLOAT32      = 1,
+    NVAPI_COOPERATIVE_VECTOR_COMPONENT_TYPE_FLOAT64      = 2,
+    NVAPI_COOPERATIVE_VECTOR_COMPONENT_TYPE_SINT8        = 3,
+    NVAPI_COOPERATIVE_VECTOR_COMPONENT_TYPE_SINT16       = 4,
+    NVAPI_COOPERATIVE_VECTOR_COMPONENT_TYPE_SINT32       = 5,
+    NVAPI_COOPERATIVE_VECTOR_COMPONENT_TYPE_SINT64       = 6,
+    NVAPI_COOPERATIVE_VECTOR_COMPONENT_TYPE_UINT8        = 7,
+    NVAPI_COOPERATIVE_VECTOR_COMPONENT_TYPE_UINT16       = 8,
+    NVAPI_COOPERATIVE_VECTOR_COMPONENT_TYPE_UINT32       = 9,
+    NVAPI_COOPERATIVE_VECTOR_COMPONENT_TYPE_UINT64       = 10,
+    NVAPI_COOPERATIVE_VECTOR_COMPONENT_TYPE_SINT8_PACKED = 11,
+    NVAPI_COOPERATIVE_VECTOR_COMPONENT_TYPE_UINT8_PACKED = 12,
+    NVAPI_COOPERATIVE_VECTOR_COMPONENT_TYPE_FLOAT_E4M3   = 13,  
+    NVAPI_COOPERATIVE_VECTOR_COMPONENT_TYPE_FLOAT_E5M2   = 14, 
+    NVAPI_COOPERATIVE_VECTOR_COMPONENT_TYPE_INVALID      = 0x7FFFFFFF
+} NVAPI_COOPERATIVE_VECTOR_COMPONENT_TYPE;
+
+//! Device or Host address descriptor to specify source/destination addresses. Both source and destination must either be on host or both on device.
+//! \ingroup dx
+typedef struct NVAPI_DEVICE_OR_HOST_ADDRESS
+{
+    NvBool bIsDeviceAlloc;                          //!< [in] Is false if allocation is on CPU, true otherwise. The value of this also decides whether conversion will happen on host or device. 
+    union 
+    {
+        D3D12_GPU_VIRTUAL_ADDRESS deviceAddress;    //!< [in] GPU VA of allocation
+        void*                     pHostAddress;     //!< [in] Pointer to host allocation
+    };
+} NVAPI_DEVICE_OR_HOST_ADDRESS;
+
+//! Possible cooperative vector matrix layouts
+//! \ingroup dx
+typedef enum NVAPI_COOPERATIVE_VECTOR_MATRIX_LAYOUT {
+    NVAPI_COOPERATIVE_VECTOR_MATRIX_LAYOUT_ROW_MAJOR           = 0,
+    NVAPI_COOPERATIVE_VECTOR_MATRIX_LAYOUT_COLUMN_MAJOR        = 1,
+    NVAPI_COOPERATIVE_VECTOR_MATRIX_LAYOUT_INFERENCING_OPTIMAL = 2,
+    NVAPI_COOPERATIVE_VECTOR_MATRIX_LAYOUT_TRAINING_OPTIMAL    = 3,
+    NVAPI_COOPERATIVE_VECTOR_MATRIX_LAYOUT_INVALID             = 0x7FFFFFFF
+} NVAPI_COOPERATIVE_VECTOR_MATRIX_LAYOUT;
+
+//! Structure specifying a request to convert the layout and type of a cooperative vector matrix
+//! \ingroup dx
+typedef struct _NVAPI_CONVERT_COOPERATIVE_VECTOR_MATRIX_DESC_V1
+{    
+    NvU32                                   version;                //!< [in]    Struct version.
+    size_t                                  srcSize;                //!< [in]    Is the length in bytes of srcData
+    NVAPI_DEVICE_OR_HOST_ADDRESS            srcData;                //!< [in]    Is either `NULL` when calling the command to query the required size of the destination or a pointer to the source data in the source layout.
+    size_t*                                 pDstSize;               //!< [inout] Is a pointer to an integer storing the number of bytes required or requested to convert.
+    NVAPI_DEVICE_OR_HOST_ADDRESS            dstData;                //!< [inout] Is either `NULL` when calling the command to query the required size of the destination or a pointer to the destination data.
+    NVAPI_COOPERATIVE_VECTOR_COMPONENT_TYPE srcComponentType;       //!< [in]    Is the type of a source matrix element
+    NVAPI_COOPERATIVE_VECTOR_COMPONENT_TYPE dstComponentType;       //!< [in]    Is the type of a destination matrix element.
+    NvU32                                   numRows;                //!< [in]    Is the number of rows in the matrix.
+    NvU32                                   numColumns;             //!< [in]    Is the number of columns in the matrix.
+    NVAPI_COOPERATIVE_VECTOR_MATRIX_LAYOUT  srcLayout;              //!< [in]    Is the layout of the source matrix.
+    size_t                                  srcStride;              //!< [in]    Is the number of elements between a consecutive row or column (depending on srcLayout) of the source matrix, if it is row-major or column-major.
+    NVAPI_COOPERATIVE_VECTOR_MATRIX_LAYOUT  dstLayout;              //!< [in]    Is the layout the matrix is converted to.
+    size_t                                  dstStride;              //!< [in]    Is the number of bytes between a consecutive row or column (depending on dstLayout) of the destination matrix if it is row-major or column-major.
+} NVAPI_CONVERT_COOPERATIVE_VECTOR_MATRIX_DESC_V1;
+
+typedef NVAPI_CONVERT_COOPERATIVE_VECTOR_MATRIX_DESC_V1 NVAPI_CONVERT_COOPERATIVE_VECTOR_MATRIX_DESC;
+
+//! Macro for deriving version of NVAPI_CONVERT_COOPERATIVE_VECTOR_MATRIX_DESC
+#define NVAPI_CONVERT_COOPERATIVE_VECTOR_MATRIX_DESC_VER1 MAKE_NVAPI_VERSION(NVAPI_CONVERT_COOPERATIVE_VECTOR_MATRIX_DESC_V1,1)
+#define NVAPI_CONVERT_COOPERATIVE_VECTOR_MATRIX_DESC_VER  NVAPI_CONVERT_COOPERATIVE_VECTOR_MATRIX_DESC_VER1
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// FUNCTION NAME: NvAPI_D3D12_ConvertCooperativeVectorMatrix
+//
+//!   DESCRIPTION: Queries the size of a cooperative vector matrix or converts a matrix to another layout and type. Performs a single conversion using descriptor pointed to by pDesc.
+//!                For multiple conversions in a single API call, use NvAPI_D3D12_ConvertCooperativeVectorMatrixMultiple.
+//!                If both the source (src) and destination (dst) allocations reside on the host, the conversion is run on the host. 
+//!                Conversely, if both allocations are on the device, the conversion is run on the device.
+//!                Note that conversions between host and device allocations (and vice versa) are not supported.
+//!                If pDstData is `NULL`, then the number of bytes required to store the converted matrix is returned in pDstSize.
+//!                Otherwise, pDstSize must point to a variable set by the user to the number of bytes in pDstData, and on return the
+//!                variable is overwritten with the number of bytes actually written to pDstData.
+//!                pSrcData can be `NULL` when pDstData is `NULL`. If pDstSize is less than the number of bytes required to store the
+//!                converted matrix, no bytes will be written, and NVAPI_INSUFFICIENT_BUFFER will be returned instead of NVAPI_OK, to indicate that not enough space was provided.
+//!                The size of the destination is only a function of the destination layout information, and does not depend on the source layout information.                
+//!                If srcLayout is row-major or column-major, then srcStride should be greater than the length of a row/column, and a multiple of the element size.
+//!                If dstLayout is row-major or column-major, then dstStride should be greater than the length of a row/column, and a multiple of the element size.
+//!                If srcComponentType is not a supported MatrixInterpretation value as reported by NvAPI_D3D12_GetPhysicalDeviceCooperativeVectorProperties() then srcComponentType should be `NVAPI_COOPERATIVE_VECTOR_COMPONENT_TYPE_FLOAT32`.
+//!                If dstComponentType is not a supported MatrixInterpretation value as reported by NvAPI_D3D12_GetPhysicalDeviceCooperativeVectorProperties() then dstComponentType should be `NVAPI_COOPERATIVE_VECTOR_COMPONENT_TYPE_FLOAT32`.
+//!                If srcComponentType and dstComponentType are not equal, then one should be `NVAPI_COOPERATIVE_VECTOR_COMPONENT_TYPE_FLOAT32`  or `NVAPI_COOPERATIVE_VECTOR_COMPONENT_TYPE_FLOAT16` and the other should be a lower-precision floating-point type. 
+//!                If dstComponentType is `NVAPI_COOPERATIVE_VECTOR_COMPONENT_TYPE_FLOAT_E4M3` or `NVAPI_COOPERATIVE_VECTOR_COMPONENT_TYPE_FLOAT_E5M2`, then dstLayout should be `NVAPI_COOPERATIVE_VECTOR_MATRIX_LAYOUT_INFERENCING_OPTIMAL` or `NVAPI_COOPERATIVE_VECTOR_MATRIX_LAYOUT_TRAINING_OPTIMAL`.
+//!
+//! \since Release: 570
+//! SUPPORTED OS:  Windows 10 and higher
+//!
+//! \param [in] pDevice       Pointer to the ID3D12Device created by application.
+//! \param [in] pCommandList  Pointer to ID3D12GraphicsCommandList for device side conversion. Ignored if host side conversion is desired.
+//! \param [in] pDesc         Pointer to NVAPI_CONVERT_COOPERATIVE_VECTOR_MATRIX_DESC created by app
+//!
+//! \retval NVAPI_OK                          Conversion done succesfully.          
+//! \retval NVAPI_API_NOT_INITIALIZED         NvAPI was not yet initialized.
+//! \retval NVAPI_INVALID_POINTER             pDevice and/or pDesc is NULL.
+//! \retval NVAPI_INVALID_COMBINATION         Either src and dst data are both not on CPU/GPU or both are on GPU but pCommandList is NULL.
+//! \retval NVAPI_INSUFFICIENT_BUFFER         Destination size passed was not enough for the conversion result.
+//! \retval NVAPI_INCOMPATIBLE_STRUCT_VERSION Incompatible structure version of pDesc.
+//! \retval NVAPI_ERROR                       Generic error.
+//! \retval NVAPI_OUT_OF_MEMORY               Internal allocation failed.
+//!
+//! \ingroup dx
+///////////////////////////////////////////////////////////////////////////////
+NVAPI_INTERFACE NvAPI_D3D12_ConvertCooperativeVectorMatrix(__in ID3D12Device *pDevice, __in ID3D12GraphicsCommandList* pCommandList, __in NVAPI_CONVERT_COOPERATIVE_VECTOR_MATRIX_DESC const* const pDesc);
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// FUNCTION NAME: NvAPI_D3D12_ConvertCooperativeVectorMatrixMultiple
+//
+//!   DESCRIPTION: Queries the size of a cooperative vector matrix or converts a matrix to another layout and type.
+//!                Can perform multiple conversions in a single API call. The number of descriptors pointed to by pDesc is specified using descCount. 
+//!                Function returns error if any of the conversions fail and does not process further conversions.
+//!                Behavior is same as NvAPI_D3D12_ConvertCooperativeVectorMatrix if descCount is equal to 1.
+//!                If both the source (src) and destination (dst) allocations reside on the host, the conversion is run on the host. 
+//!                See NvAPI_D3D12_ConvertCooperativeVectorMatrix documentation for valid usage.
+//!
+//! \since Release: 570
+//! SUPPORTED OS:  Windows 10 and higher
+//!
+//! \param [in] pDevice       Pointer to the ID3D12Device created by application.
+//! \param [in] pCommandList  Pointer to ID3D12GraphicsCommandList for device side conversion. Ignored if host side conversion is desired.
+//! \param [in] pDesc         Pointer to NVAPI_CONVERT_COOPERATIVE_VECTOR_MATRIX_DESC created by app.
+//! \param [in] desCount      Specifies the count of NVAPI_CONVERT_COOPERATIVE_VECTOR_MATRIX_DESC descriptors pointed to by pDesc. Must be greater than 0.
+//!
+//! \retval NVAPI_OK                          Conversion done succesfully.          
+//! \retval NVAPI_API_NOT_INITIALIZED         NvAPI was not yet initialized.
+//! \retval NVAPI_INVALID_POINTER             pDevice and/or pDesc is NULL.
+//! \retval NVAPI_INVALID_ARGUMENT            descCount is 0.
+//! \retval NVAPI_INVALID_COMBINATION         Either src and dst data are both not on CPU/GPU or both are on GPU but pCommandList is NULL.
+//! \retval NVAPI_INSUFFICIENT_BUFFER         Destination size passed was not enough for the conversion result.
+//! \retval NVAPI_INCOMPATIBLE_STRUCT_VERSION Incompatible structure version of pDesc.
+//! \retval NVAPI_ERROR                       Generic error.
+//! \retval NVAPI_OUT_OF_MEMORY               Internal allocation failed.
+//!
+//! \ingroup dx
+///////////////////////////////////////////////////////////////////////////////
+NVAPI_INTERFACE NvAPI_D3D12_ConvertCooperativeVectorMatrixMultiple(__in ID3D12Device *pDevice, __in ID3D12GraphicsCommandList* pCommandList, __in NVAPI_CONVERT_COOPERATIVE_VECTOR_MATRIX_DESC const* const pDesc, __in NvU32 descCount);
+
+//! Each structure describes a single supported combination of types for a matrix-vector multiply (or multiply-add) operation
+//! \ingroup dx
+typedef struct _NVAPI_COOPERATIVE_VECTOR_PROPERTIES_V1
+{
+    NvU32                                       version;                //!< [out] Struct version. App must verify the value returned by API.
+    NVAPI_COOPERATIVE_VECTOR_COMPONENT_TYPE     inputType;              //!< [out] Is the component type of vector Input, of type NVAPI_COOPERATIVE_VECTOR_COMPONENT_TYPE.
+    NVAPI_COOPERATIVE_VECTOR_COMPONENT_TYPE     inputInterpretation;    //!< [out] Is the value of InputInterpretation, of type NVAPI_COOPERATIVE_VECTOR_COMPONENT_TYPE.
+    NVAPI_COOPERATIVE_VECTOR_COMPONENT_TYPE     matrixInterpretation;   //!< [out] Is the value of MatrixInterpretation, of type NVAPI_COOPERATIVE_VECTOR_COMPONENT_TYPE.
+    NVAPI_COOPERATIVE_VECTOR_COMPONENT_TYPE     biasInterpretation;     //!< [out] Is the value of BiasInterpretation, of type NVAPI_COOPERATIVE_VECTOR_COMPONENT_TYPE.
+    NVAPI_COOPERATIVE_VECTOR_COMPONENT_TYPE     resultType;             //!< [out] Is the component type of Result Type, of type NVAPI_COOPERATIVE_VECTOR_COMPONENT_TYPE.
+    bool                                        transpose;              //!< [out] Is a boolean indicating whether opaque layout matrices with this combination of input and output types supports transposition.
+}NVAPI_COOPERATIVE_VECTOR_PROPERTIES_V1;
+
+typedef NVAPI_COOPERATIVE_VECTOR_PROPERTIES_V1 NVAPI_COOPERATIVE_VECTOR_PROPERTIES;
+
+//! Macro for deriving version of NVAPI_COOPERATIVE_VECTOR_PROPERTIES
+#define NVAPI_COOPERATIVE_VECTOR_PROPERTIES_VER1  MAKE_NVAPI_VERSION(NVAPI_COOPERATIVE_VECTOR_PROPERTIES_V1,1)
+#define NVAPI_COOPERATIVE_VECTOR_PROPERTIES_VER   NVAPI_COOPERATIVE_VECTOR_PROPERTIES_VER1
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// FUNCTION NAME: NvAPI_D3D12_GetPhysicalDeviceCooperativeVectorProperties
+//
+//!   DESCRIPTION: Enumerates supported cooperative vector types combinations. 
+//!                If pProperties is `NULL`, then the number of cooperative vector properties available is returned in pPropertyCount.
+//!                Otherwise, pPropertyCount must point to a variable set by the user to the number of elements in the pProperties array, 
+//!                and on return the variable is overwritten with the number of structures actually written to pProperties. 
+//!                If pPropertyCount is less than the number of cooperative vector properties available, at most pPropertyCount structures will be
+//!                written, and status will be NVAPI_INSUFFICIENT_BUFFER to indicate that not all the available cooperative vector properties were returned.
+//!
+//! \since Release: 570
+//! SUPPORTED OS:  Windows 10 and higher
+//!
+//! \param [in]    pDevice       Pointer to the ID3D12Device created by application.
+//! \param [inout] propertyCount Number of cooperative vector properties available or queried
+//! \param [inout] pProperties   Is either `NULL` or a pointer to an array of NVAPI_COOPERATIVE_VECTOR_PROPERTIES structures.
+//!
+//! \retval NVAPI_OK                          Properties returned succesfully
+//! \retval NVAPI_API_NOT_INITIALIZED         NvAPI was not yet initialized.
+//! \retval NVAPI_INSUFFICIENT_BUFFER         Not an error but all supported properties could not be written into as propertyCount was insufficient.
+//! \retval NVAPI_INVALID_POINTER             pDevice is NULL.
+//! \retval NVAPI_ERROR                       Generic error.
+//! \retval NVAPI_OUT_OF_MEMORY               Internal allocation failed.
+//!
+//! \ingroup dx
+///////////////////////////////////////////////////////////////////////////////
+NVAPI_INTERFACE NvAPI_D3D12_GetPhysicalDeviceCooperativeVectorProperties(__in ID3D12Device *pDevice, __inout NvU32 *pPropertyCount, __inout NVAPI_COOPERATIVE_VECTOR_PROPERTIES* pProperties);
+#endif //defined(__cplusplus) && (defined(__d3d12_h__))
+
+#if defined(__cplusplus) && defined(__d3d12_h__) && defined(__ID3D12Device5_INTERFACE_DEFINED__)
+
+//! \ingroup dx
+#define NVAPI_D3D12_RAYTRACING_CLAS_BYTE_ALIGNMENT 128                    //!< The alignment required for storage of CLAS objects
+
+//! \ingroup dx
+#define NVAPI_D3D12_RAYTRACING_CLUSTER_TEMPLATE_BYTE_ALIGNMENT 32         //!< The alignment required for storage of Cluster Templates objects
+
+//! \ingroup dx
+#define NVAPI_D3D12_RAYTRACING_CLUSTER_TEMPLATE_BOUNDS_BYTE_ALIGNMENT 32  //!< The alignment required for the optional AABB provided to Cluster Template builds
+
+//! \ingroup dx
+#define NVAPI_D3D12_RAYTRACING_MAXIMUM_GEOMETRY_INDEX 16777215            //!< The maximum supported geometry index for use with cluster objects
+
+//! Enumeration listing permitted flag values for NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_INPUTS
+//!
+//! \ingroup dx
+typedef enum _NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_FLAGS
+{
+    NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_FLAG_NONE                   = 0x0,        //!< No option specified for the multi indirect cluster operation
+    NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_FLAG_FAST_TRACE             = NV_BIT(0),  //!< Indicates that the operation should optimize results for trace performance at the cost of build performance
+    NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_FLAG_FAST_BUILD             = NV_BIT(1),  //!< Indicates that the operation should optimize results for build performance at the cost of trace performance
+    NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_FLAG_NO_OVERLAP             = NV_BIT(2),  //!< For cluster operations that permit input/output overlap this indicates that no such overlap exists, invalid to use when inputs and outputs are overlapping
+    NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_FLAG_ALLOW_OMM              = NV_BIT(3),  //!< Specifies that the operation will interact with Cluster BLAS, CLAS or Templates that reference OMMs. All Operation Types & Modes require this field to be set correctly when interacting (building or consuming) objects that contain OMMs.
+} NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_FLAGS;
+
+//! Enumeration listing permitted geometry flag values for Clusters
+//!
+//! \ingroup dx
+typedef enum _NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_CLUSTER_FLAGS
+{
+    NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_CLUSTER_FLAG_NONE                            = 0x0,        //!< No option specified for the argument of this cluster
+    NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_CLUSTER_FLAG_ALLOW_DISABLE_OMMS              = NV_BIT(0),  //!< If set, any instances referencing a Cluster BLAS containing this CLAS are allowed to disable the OMM test through the `NVAPI_D3D12_RAYTRACING_INSTANCE_FLAG_DISABLE_OMMS` flag.
+} NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_CLUSTER_FLAGS;
+
+//! Enumeration listing permitted geometry flag values for Cluster Geometry
+//!
+//! \ingroup dx
+typedef enum _NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_GEOMETRY_FLAGS
+{
+    NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_GEOMETRY_FLAG_NONE                           = 0x0,         //!< No option specified for the argument of this cluster geometry
+    NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_GEOMETRY_FLAG_CULL_DISABLE                   = NV_BIT(29),  //!< Disables front and back face culling for affected triangles, see D3D12_RAYTRACING_INSTANCE_FLAG_TRIANGLE_CULL_DISABLE 
+    NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_GEOMETRY_FLAG_NO_DUPLICATE_ANYHIT_INVOCATION = NV_BIT(30),  //!< Same behavior as D3D12_RAYTRACING_GEOMETRY_FLAG_NO_DUPLICATE_ANYHIT_INVOCATION for non-cluster Geometry
+    NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_GEOMETRY_FLAG_OPAQUE                         = NV_BIT(31),  //!< Same behavior as D3D12_RAYTRACING_GEOMETRY_FLAG_OPAQUE for non-cluster Geometry
+} NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_GEOMETRY_FLAGS;
+
+//! Enumeration listing possible values for Cluster Operation types
+//!
+//! \ingroup dx
+typedef enum _NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_TYPE
+{
+    NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_TYPE_MOVE_CLUSTER_OBJECT                     = 0, //!< Copies/moves CLAS, Cluster BLAS or Templates, use NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_MOVES_DESC as desc. Alignment requirement depends on the type of object moved.
+    NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_TYPE_BUILD_BLAS_FROM_CLAS                    = 1, //!< Constructs Cluster BLAS from arrays of CLAS addresses, use NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_CLAS_DESC as desc. Alignment of Cluster BLAS is a multiple of D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BYTE_ALIGNMENT.
+    NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_TYPE_BUILD_CLAS_FROM_TRIANGLES               = 2, //!< Constructs CLAS from triangle data, use NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_TRIANGLES_DESC as desc. Alignment of CLAS is a multiple of NVAPI_D3D12_RAYTRACING_CLAS_BYTE_ALIGNMENT.
+    NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_TYPE_BUILD_CLUSTER_TEMPLATES_FROM_TRIANGLES  = 3, //!< Constructs Cluster Templates from triangle data, use NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_TRIANGLES_DESC as desc. Alignment of Cluster Templates is a multiple of NVAPI_D3D12_RAYTRACING_CLUSTER_TEMPLATE_BYTE_ALIGNMENT.
+    NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_TYPE_INSTANTIATE_CLUSTER_TEMPLATES           = 4, //!< Instantiates Cluster Templates to create CLAS results, use NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_TRIANGLES_DESC as desc. Alignment of CLAS is a multiple of NVAPI_D3D12_RAYTRACING_CLAS_BYTE_ALIGNMENT.
+} NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_TYPE;
+
+//! Specifies the index format to use for cluster operations.
+//! The values are chosen to match Vulkan's style of index size (in bytes) for the appropriate format
+//!
+//! \ingroup dx
+typedef enum _NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_INDEX_FORMAT
+{
+  NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_INDEX_FORMAT_8BIT  = 1,  //!< Use 8-bit indices
+  NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_INDEX_FORMAT_16BIT = 2,  //!< Use 16-bit indices
+  NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_INDEX_FORMAT_32BIT = 4,  //!< Use 32-bit indices
+} NVAPI_3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_INDEX_FORMAT;
+
+//! Enumeration listing possible values for the Cluster Operation mode
+//!
+//! \ingroup dx
+typedef enum _NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_MODE
+{
+    NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_MODE_IMPLICIT_DESTINATIONS   = 0, //!< User provides total buffer space, driver places results within, returns VAs and actual sizes
+    NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_MODE_EXPLICIT_DESTINATIONS   = 1, //!< User provides individual target VAs, driver places them there, returns actual sizes
+    NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_MODE_GET_SIZES               = 2, //!< Driver returns maximum sizes per element, results may only be used with NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_MODE_EXPLICIT_DESTINATIONS
+} NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_MODE;
+
+//! Desc used for operation type NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_TYPE_BUILD_BLAS_FROM_CLAS
+//!
+//! \ingroup dx
+typedef struct _NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_INPUT_CLAS_DESC
+{
+    NvU32                       maxTotalClasCount;  //!< The maximum total number of CLAS used by all BLAS that will be built by one call (reuse of the same CLAS counts multiple times)
+    NvU32                       maxClasCountPerArg; //!< The maximum number of CLAS used by an individual Arg (equivalent to a BLAS being built). Maximum supported value is D3D12_RAYTRACING_MAXIMUM_PRIMITIVE_COUNT.
+} NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_INPUT_CLAS_DESC;
+
+//! Desc used for operation type either NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_TYPE_BUILD_CLAS_FROM_TRIANGLES, NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_TYPE_BUILD_CLUSTER_TEMPLATES_FROM_TRIANGLES or NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_TYPE_INSTANTIATE_CLUSTER_TEMPLATES
+//!
+//! \ingroup dx
+typedef struct _NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_INPUT_TRIANGLES_DESC
+{
+    NvU32                       vertexFormat;                   //!< A value of `DXGI_FORMAT` describing the vertex format used in the vertex buffer passed for the cluster operation. For a list of supported vertex formats, see D3D12_RAYTRACING_GEOMETRY_TRIANGLES_DESC::VertexFormat
+    NvU32                       maxGeometryIndexValue;          //!< The maximum value of any geometry index that will occur in the results of the cluster operation (including instanced CLAS from templates constructed by it). Maximum supported value is NVAPI_D3D12_RAYTRACING_MAXIMUM_GEOMETRY_INDEX.
+    NvU32                       maxUniqueGeometryCountPerArg;   //!< The maximum value number of unique geometry index values that will occur in each individual result of the cluster operation. A value of 0 is treated as a value of 1. Maximum supported value is 256.
+    NvU32                       maxTriangleCountPerArg;         //!< The maximum number of triangles that will occur in each individual result of the cluster operation. Maximum supported value is 256.
+    NvU32                       maxVertexCountPerArg;           //!< The maximum number of vertices that will occur in each individual result of the cluster operation. Maximum supported value is 256.
+    NvU32                       maxTotalTriangleCount;          //!< The maximum total value of summing up the number of triangles that will occur in each individual result of the cluster operation.
+    NvU32                       maxTotalVertexCount;            //!< The maximum total value of summing up the number of vertices that will occur in each individual result of the cluster operation.
+    NvU32                       minPositionTruncateBitCount;    //!< The minimum number of bits that will be truncated from vertex positions in the arguments of this cluster operation. Maximum supported value is 32.
+} NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_INPUT_TRIANGLES_DESC;
+
+//! Enumeration listing the possible types used by NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_INPUT_MOVES_DESC
+//!
+//! \ingroup dx
+typedef enum _NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_MOVE_TYPE
+{
+    NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_MOVE_TYPE_BOTTOM_LEVEL_ACCELERATION_STRUCTURE  = 0, //!< The moved objects are Clustered BLAS
+    NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_MOVE_TYPE_CLUSTER_LEVEL_ACCELERATION_STRUCTURE = 1, //!< The moved objects are CLAS
+    NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_MOVE_TYPE_TEMPLATE                             = 2, //!< The moved objects are Cluster Templates
+} NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_MOVE_TYPE;
+
+//! Desc used for operation type NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_TYPE_MOVE_CLUSTER_OBJECT
+//!
+//! \ingroup dx
+typedef struct _NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_MOVES_DESC 
+{
+    NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_MOVE_TYPE   type;          //!< Determines the type of object to be copied/moved by this cluster operation
+    NvU32                                                               maxBytesMoved; //!< Determines the maximum total number of bytes copied/moved by the operation (maximum sum of sizes of all copied/moved objects)
+} NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_INPUT_MOVES_DESC;
+
+//! Inputs describing the configuration of a cluster operation, used to determine the memory requirement for the operation
+//!
+//! \ingroup dx
+typedef struct _NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_INPUTS
+{
+    NvU32                                                                  maxArgCount; //!< Represents the maximum number of arguments to process
+    NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_FLAGS          flags;       //!< Flags to modify the operation
+    NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_TYPE           type;        //!< The type of multi indirect operation to execute
+    NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_MODE           mode;        //!< The operation mode executed
+ 
+    //!< Different arguments depending on type, see NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_TYPE for details
+    union
+    {
+        NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_INPUT_CLAS_DESC      clasDesc;      //!< Use when type is equal to NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_TYPE_BUILD_BLAS_FROM_CLAS
+        NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_INPUT_TRIANGLES_DESC trianglesDesc; //!< Use when type is equal to one of: NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_TYPE_BUILD_CLAS_FROM_TRIANGLES, NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_TYPE_BUILD_CLUSTER_TEMPLATES_FROM_TRIANGLES, NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_TYPE_INSTANTIATE_CLUSTER_TEMPLATES
+        NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_INPUT_MOVES_DESC     movesDesc;     //!< Use when type is equal to NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_TYPE_MOVE_CLUSTER_OBJECT
+    };
+} NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_INPUTS;
+
+//! Structure describing the memory requirement of a cluster operation
+//!
+//! \ingroup dx
+typedef struct _NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_REQUIREMENTS_INFO
+{
+    NvU64 resultDataMaxSizeInBytes; //!< Allocated size required to hold the result of the multi indirect operation based on the specified inputs. 
+                                    //!< For NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_MODE_EXPLICIT_DESTINATIONS this will be one per object.
+                                    //!< For NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_MODE_IMPLICIT_DESTINATIONS this will be for all objects in the given call.
+                                    //!< For NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_MODE_GET_SIZES always 0.
+    NvU64 scratchDataSizeInBytes;   //!< Scratch storage on GPU required during multi indirect operation based on the specified inputs.
+} NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_REQUIREMENTS_INFO;
+
+//! Parameter structure for NvAPI_D3D12_GetRaytracingMultiIndirectClusterOperationRequirementsInfo
+//!
+//! \ingroup dx
+typedef struct _NVAPI_GET_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_REQUIREMENTS_INFO_PARAMS_V1
+{
+    NvU32                                                                       version; //!< [in]  Structure version; it should be set to #NVAPI_GET_RAYTRACING_ACCELERATION_STRUCTURE_MULTI_INDIRECT_PREBUILD_INFO_PARAMS_VER.
+    const NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_INPUTS*       pInput;  //!< [in]  Description of the multi indirect operation.
+    NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_REQUIREMENTS_INFO*  pInfo;   //!< [out] Result of the query.
+} NVAPI_GET_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_REQUIREMENTS_INFO_PARAMS_V1;
+#define NVAPI_GET_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_REQUIREMENTS_INFO_PARAMS_VER1          MAKE_NVAPI_VERSION(NVAPI_GET_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_REQUIREMENTS_INFO_PARAMS_V1, 1)
+typedef NVAPI_GET_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_REQUIREMENTS_INFO_PARAMS_V1            NVAPI_GET_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_REQUIREMENTS_INFO_PARAMS;
+#define NVAPI_GET_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_REQUIREMENTS_INFO_PARAMS_VER           NVAPI_GET_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_REQUIREMENTS_INFO_PARAMS_VER1
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// FUNCTION NAME: NvAPI_D3D12_GetRaytracingMultiIndirectClusterOperationRequirementsInfo
+//
+//! DESCRIPTION: Function call used to determine the memory requirements for a future call to NvAPI_D3D12_RaytracingExecuteMultiIndirectClusterOperation
+//!
+//! SUPPORTED OS:  Windows 10 and higher
+//!
+//!
+//! \since Release: 560
+//!
+//! \param [in]     pDevice              The D3D device that owns the command list the future call to NvAPI_D3D12_RaytracingExecuteMultiIndirectClusterOperation will be made from
+//! \param [in]     pParams              API parameters
+//!
+//! \return This API can return any of the error codes enumerated in #NvAPI_Status.
+//!         If there are return error codes with specific meaning for this API, they are listed below.
+//!
+//! \retval ::NVAPI_OK                   Completed request
+//! \retval ::NVAPI_INVALID_POINTER      A null pointer was passed as pDevice, pParams, pParams->pInput 
+//!                                      or pParams->pInfo argument
+//! \retval ::NVAPI_INVALID_ARGUMENT     The pParams->pInfo parameter was set in an invalid way
+//! \ingroup dx
+///////////////////////////////////////////////////////////////////////////////
+NVAPI_INTERFACE NvAPI_D3D12_GetRaytracingMultiIndirectClusterOperationRequirementsInfo(
+    __in    ID3D12Device5* pDevice,
+    __inout const NVAPI_GET_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_REQUIREMENTS_INFO_PARAMS* pParams);
+
+//! Argument structure used on device for operation type NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_TYPE_BUILD_BLAS_FROM_CLAS
+//!
+//! \ingroup dx
+typedef struct _NVAPI_D3D12_RAYTRACING_ACCELERATION_STRUCTURE_MULTI_INDIRECT_CLUSTER_ARGS
+{
+    NvU32                     clusterCount; //!< [in] The size of the array referenced by clusterVAs. Must be less than or equal to NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_INPUT_CLAS_DESC::maxClasCountPerArg
+    NvU32                     reserved;     //!< [in] Reserved, must be 0
+    D3D12_GPU_VIRTUAL_ADDRESS clusterVAs;   //!< [in] Address of an array of D3D12_GPU_VIRTUAL_ADDRESS holding valid addresses of CLAS previously constructed. 8 byte stride/alignment.
+} NVAPI_D3D12_RAYTRACING_ACCELERATION_STRUCTURE_MULTI_INDIRECT_CLUSTER_ARGS;
+
+//! Argument structure used on device for operation type NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_TYPE_BUILD_CLAS_FROM_TRIANGLES
+//!
+//! \ingroup dx
+typedef struct _NVAPI_D3D12_RAYTRACING_ACCELERATION_STRUCTURE_MULTI_INDIRECT_TRIANGLE_CLUSTER_ARGS
+{
+    NvU32                        clusterId;                         //!< [in] The user specified cluster Id to encode in the CLAS.
+    NvU32                        clusterFlags;                      //!< [in] Values of NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_CLUSTER_FLAGS to use as Cluster Flags.
+    NvU32                        triangleCount : 9;                 //!< [in] The number of triangles used by the CLAS (max NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_INPUT_TRIANGLES_DESC::maxTriangleCountPerArg).
+    NvU32                        vertexCount : 9;                   //!< [in] The number of vertices used by the CLAS (max NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_INPUT_TRIANGLES_DESC::maxVertexCountPerArg).
+    NvU32                        positionTruncateBitCount : 6;      //!< [in] The number of bits to truncate from the position values (min NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_INPUT_TRIANGLES_DESC::minPositionTruncateBitCount).
+    NvU32                        indexFormat : 4;                   //!< [in] The index format to use for the indexBuffer, see NVAPI_3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_INDEX_FORMAT for possible values.
+    NvU32                        opacityMicromapIndexFormat : 4;    //!< [in] The index format to use for the opacityMicromapIndexBuffer, see NVAPI_3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_INDEX_FORMAT for possible values.
+    NvU32                        baseGeometryIndexAndFlags;         //!< [in] The base geometry index (lower 24 bit) and base geometry flags (NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_GEOMETRY_FLAGS), see geometryIndexBuffer.
+    NvU16                        indexBufferStride;                 //!< [in] The stride of the elements of indexBuffer, in bytes. If set to 0, will use index size as stride.
+    NvU16                        vertexBufferStride;                //!< [in] The stride of the elements of vertexBuffer, in bytes. If set to 0, will use vertex size as stride.
+    NvU16                        geometryIndexAndFlagsBufferStride; //!< [in] The stride of the elements of geometryIndexBuffer, in bytes. If set to 0, will use 4 byte size as stride.
+    NvU16                        opacityMicromapIndexBufferStride;  //!< [in] The stride of the elements of opacityMicromapIndexBuffer, in bytes. If set to 0, will use index size as stride.
+    D3D12_GPU_VIRTUAL_ADDRESS    indexBuffer;                       //!< [in] The index buffer to construct the CLAS. The memory pointed to must be in state D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE.
+    D3D12_GPU_VIRTUAL_ADDRESS    vertexBuffer;                      //!< [in] The vertex buffer to construct the CLAS. The memory pointed to must be in state D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE.
+    D3D12_GPU_VIRTUAL_ADDRESS    geometryIndexAndFlagsBuffer;       //!< [in] (optional) Address of an array of 32-bit geometry indices and geometry flags with size equal to the triangle count.
+                                                                    //!< Each 32-bit value is organized the same as baseGeometryIndexAndFlags.
+                                                                    //!< If non-zero, the geometry indices of the CLAS triangles will be equal to the lower 24-bit of geometryIndexBuffer[triangleIndex] + baseGeometryIndex.
+                                                                    //!< If non-zero, the geometry flags for each triangle will be the bitwise OR of the flags in the upper 8 bits of baseGeometryIndex and geometryIndexBuffer[triangleIndex].
+                                                                    //!< Otherwise all triangles will have a geometry index equal to baseGeometryIndexAndFlags.
+                                                                    //!< The number of unique elements may not exceed NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_INPUT_TRIANGLES_DESC::maxUniqueGeometryCountPerArg.
+                                                                    //!< If used, the memory pointed to must be in state D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE.
+    D3D12_GPU_VIRTUAL_ADDRESS    opacityMicromapArray;              //!< [in] (optional) Address of a valid OMM array, if used NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_FLAG_ALLOW_OMM must be set on this and all other cluster operation calls interacting with the object(s) constructed.
+    D3D12_GPU_VIRTUAL_ADDRESS    opacityMicromapIndexBuffer;        //!< [in] (optional) Address of an array of indices into the OMM array. Note that an additional OMM special index is reserved and can be used to turn off OMM for specific triangles.
+} NVAPI_D3D12_RAYTRACING_ACCELERATION_STRUCTURE_MULTI_INDIRECT_TRIANGLE_CLUSTER_ARGS;
+
+//! Argument structure used on device for operation type NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_TYPE_BUILD_CLUSTER_TEMPLATES_FROM_TRIANGLES
+//!
+//! \ingroup dx
+typedef struct _NVAPI_D3D12_RAYTRACING_ACCELERATION_STRUCTURE_MULTI_INDIRECT_TRIANGLE_TEMPLATE_ARGS
+{
+    NvU32                        clusterId;                         //!< [in] The user specified cluster Id to encode in the cluster template.
+    NvU32                        clusterFlags;                      //!< [in] Values of NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_CLUSTER_FLAGS to use as Cluster Flags.
+    NvU32                        triangleCount : 9;                 //!< [in] The number of triangles used by the cluster template (max NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_INPUT_TRIANGLES_DESC::maxTriangleCountPerArg).
+    NvU32                        vertexCount : 9;                   //!< [in] The number of vertices used by the cluster template (max NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_INPUT_TRIANGLES_DESC::maxTriangleCountPerArg).
+    NvU32                        positionTruncateBitCount : 6;      //!< [in] The number of bits to truncate from the position values (min NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_INPUT_TRIANGLES_DESC::minPositionTruncateBitCount).
+    NvU32                        indexFormat : 4;                   //!< [in] The index format to use for the indexBuffer, see NVAPI_3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_INDEX_FORMAT for possible values.
+    NvU32                        opacityMicromapIndexFormat : 4;    //!< [in] The index format to use for the opacityMicromapIndexBuffer, see NVAPI_3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_INDEX_FORMAT for possible values.
+    NvU32                        baseGeometryIndexAndFlags;         //!< [in] The base geometry index (lower 24 bit) and base geometry flags (NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_GEOMETRY_FLAGS), see geometryIndexBuffer.
+    NvU16                        indexBufferStride;                 //!< [in] The stride of the elements of indexBuffer, in bytes. If set to 0, will use index size as stride.
+    NvU16                        vertexBufferStride;                //!< [in] The stride of the elements of vertexBuffer, in bytes. If set to 0, will use vertex size as stride.
+    NvU16                        geometryIndexAndFlagsBufferStride; //!< [in] The stride of the elements of geometryIndexBuffer, in bytes. If set to 0, will use 4 byte size as stride.
+    NvU16                        opacityMicromapIndexBufferStride;  //!< [in] The stride of the elements of opacityMicromapIndexBuffer, in bytes. If set to 0, will use index size as stride.
+    D3D12_GPU_VIRTUAL_ADDRESS    indexBuffer;                       //!< [in] The index buffer to construct the cluster template. The memory pointed to must be in state D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE.
+    D3D12_GPU_VIRTUAL_ADDRESS    vertexBuffer;                      //!< [in] (optional) The vertex buffer to optimize the cluster template, the vertices will not be stored in the cluster template. If used, the memory pointed to must be in state D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE.
+    D3D12_GPU_VIRTUAL_ADDRESS    geometryIndexAndFlagsBuffer;       //!< [in] (optional) Address of an array of 32-bit geometry indices and geometry flags with size equal to the triangle count.
+                                                                    //!< Each 32-bit value is organized the same as baseGeometryIndexAndFlags.
+                                                                    //!< If non-zero, the geometry indices of the CLAS triangles will be equal to the lower 24-bit of geometryIndexBuffer[triangleIndex] + baseGeometryIndex + geometryIndexOffset.
+                                                                    //!< If non-zero, the geometry flags for each triangle will be the bitwise OR of the flags in the upper 8 bits of baseGeometryIndex and geometryIndexBuffer[triangleIndex].
+                                                                    //!< Otherwise all triangles will have a geometry index equal to baseGeometryIndexAndFlags + geometryIndexOffset.
+                                                                    //!< The number of unique elements may not exceed NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_INPUT_TRIANGLES_DESC::maxUniqueGeometryCountPerArg.
+                                                                    //!< If used, the memory pointed to must be in state D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE.
+    D3D12_GPU_VIRTUAL_ADDRESS    opacityMicromapArray;              //!< [in] (optional) Address of a valid OMM array, if used NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_FLAG_ALLOW_OMM must be set on this and all other cluster operation calls interacting with the object(s) constructed.
+    D3D12_GPU_VIRTUAL_ADDRESS    opacityMicromapIndexBuffer;        //!< [in] (optional) Address of an array of indices into the OMM array. Note that an additional OMM special index is reserved and can be used to turn off OMM for specific triangles.
+    D3D12_GPU_VIRTUAL_ADDRESS    instantiationBoundingBoxLimit;     //!< [in] (optional) Pointer to 6 floats with alignment NVAPI_D3D12_RAYTRACING_CLUSTER_TEMPLATE_BOUNDS_BYTE_ALIGNMENT representing the limits of the positions of any vertices the template will ever be instantiated with. If used, the memory pointed to must be in state D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE.
+} NVAPI_D3D12_RAYTRACING_ACCELERATION_STRUCTURE_MULTI_INDIRECT_TRIANGLE_TEMPLATE_ARGS;
+
+//! Argument structure used on device for operation type NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_TYPE_INSTANTIATE_CLUSTER_TEMPLATES
+//!
+//! \ingroup dx
+typedef struct _NVAPI_D3D12_RAYTRACING_ACCELERATION_STRUCTURE_MULTI_INDIRECT_INSTANTIATE_TEMPLATE_ARGS
+{
+    NvU32                                clusterIdOffset;      //!< [in] The offset added to the clusterId stored in the Cluster template to calculate the final clusterId that will be written to the instantiated CLAS
+    NvU32                                geometryIndexOffset;  //!< [in] The offset added to the geometry index stored for each triangle in the Cluster template to calculate the final geometry index that will be written to the triangles of the instantiated CLAS, the resulting value may not exceed maxGeometryIndexValue both of this call, and the call used to construct the original cluster template referenced
+    D3D12_GPU_VIRTUAL_ADDRESS            clusterTemplate;      //!< [in] Address of a previously built cluster template to be instantiated.
+    D3D12_GPU_VIRTUAL_ADDRESS_AND_STRIDE vertexBuffer;         //!< [in] Vertex buffer with stride to use to fetch the vertex positions used for instantiation. May be NULL only when used with NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_MODE_GET_SIZES, which will cause the maximum size for all possible vertex inputs to be returned. If used, the memory pointed to must be in state D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE.
+} NVAPI_D3D12_RAYTRACING_ACCELERATION_STRUCTURE_MULTI_INDIRECT_INSTANTIATE_TEMPLATE_ARGS;
+
+//! Argument structure used on device for operation type NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_TYPE_MOVE_CLUSTER_OBJECT
+//!
+//! \ingroup dx
+typedef struct _NVAPI_D3D12_RAYTRACING_ACCELERATION_STRUCTURE_MULTI_INDIRECT_MOVE_ARGS
+{
+    D3D12_GPU_VIRTUAL_ADDRESS            srcAccelerationStructure;  //!< [in] The address of the object to copy/move. The source object will not become clobbered unless the destinations of the call overlap with it.
+} NVAPI_D3D12_RAYTRACING_ACCELERATION_STRUCTURE_MULTI_INDIRECT_MOVE_ARGS;
+
+//! Enumeration listing permitted address resolution flag values for NvAPI_D3D12_RaytracingMultiIndirectClusterOperation
+//! Unless flags are set, each address in NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_DESC will point directly to the data value or array of data values
+//! By setting these flags the behavior is changed (one flag per field) for the field to be interpreted as containing the address of a piece of memory holding the address to the data value or array of data values.
+//! If used, the memory for any intermediate references must be in state D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE. The requirements for the final argument contents remain unchanged.
+//!
+//! \ingroup dx
+typedef enum _NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_ADDRESS_RESOLUTION_FLAGS
+{
+    NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_ADDRESS_RESOLUTION_FLAG_NONE                                 = 0x0,         //!< Interpret all addresses as direct references to the destination data
+    NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_ADDRESS_RESOLUTION_FLAG_INDIRECTED_BATCH_RESULT              = NV_BIT(0),   //!< Interpret the batchResultData as containing the device address of a D3D12_GPU_VIRTUAL_ADDRESS containing the address of data
+    NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_ADDRESS_RESOLUTION_FLAG_INDIRECTED_BATCH_SCRATCH             = NV_BIT(1),   //!< Interpret the batchScratchData as containing the device address of a D3D12_GPU_VIRTUAL_ADDRESS containing the address of data
+    NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_ADDRESS_RESOLUTION_FLAG_INDIRECTED_DESTINATION_ADDRESS_ARRAY = NV_BIT(2),   //!< Interpret the destinationAddressArray as containing the device address of a D3D12_GPU_VIRTUAL_ADDRESS containing the address of data
+    NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_ADDRESS_RESOLUTION_FLAG_INDIRECTED_RESULT_SIZE_ARRAY         = NV_BIT(3),   //!< Interpret the resultSizeArray as containing the device address of a D3D12_GPU_VIRTUAL_ADDRESS containing the address of data
+    NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_ADDRESS_RESOLUTION_FLAG_INDIRECTED_INDIRECT_ARG_ARRAY        = NV_BIT(4),   //!< Interpret the indirectArgArray as containing the device address of a D3D12_GPU_VIRTUAL_ADDRESS containing the address of data
+    NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_ADDRESS_RESOLUTION_FLAG_INDIRECTED_INDIRECT_ARG_COUNT        = NV_BIT(5),   //!< Interpret the indirectArgCount as containing the device address of a D3D12_GPU_VIRTUAL_ADDRESS containing the address of data
+} NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_ADDRESS_RESOLUTION_FLAGS;
+
+//! Describes the parameters for a call to NvAPI_D3D12_RaytracingExecuteMultiIndirectClusterOperation
+//!
+//! \ingroup dx
+typedef struct _NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_DESC
+{
+    NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_INPUTS inputs;                  //!< [in] The inputs previously used with NvAPI_D3D12_GetRaytracingMultiIndirectClusterOperationRequirementsInfo to determine the memory requirement for the operation
+    NvU32                                                          addressResolutionFlags;  //!< [in] Flags to control the resolution of address references by this structure (NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_ADDRESS_RESOLUTION_FLAGS)
+    D3D12_GPU_VIRTUAL_ADDRESS                                      batchResultData;         //!< [out] If inputs.mode is equal to NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_MODE_IMPLICIT_DESTINATIONS this must point to an memory that is sufficient for resultDataMaxSizeInBytes, otherwise ignored. If set, must be in D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE state, and aligned depending on the object type being processed.
+    D3D12_GPU_VIRTUAL_ADDRESS                                      batchScratchData;        //!< [in] Must point to memory that is sufficient for scratchDataSizeInBytes, with alignment of D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BYTE_ALIGNMENT and in D3D12_RESOURCE_STATE_UNORDERED_ACCESS state. May be NULL only if scratchDataSizeInBytes was 0
+    D3D12_GPU_VIRTUAL_ADDRESS_AND_STRIDE                           destinationAddressArray; //!< [inout] Address and stride of an array of D3D12_GPU_VIRTUAL_ADDRESS. If inputs.mode is NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_MODE_IMPLICIT_DESTINATIONS this will be filled out by the call, otherwise if inputs.mode is NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_MODE_EXPLICIT_DESTINATIONS each element of the array must contain the destination address with sufficient memory for either resultDataMaxSizeInBytes or a previous call with NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_MODE_GET_SIZES.
+                                                                                            //!< The array must be in D3D12_RESOURCE_STATE_UNORDERED_ACCESS state. If inputs.mode is NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_MODE_EXPLICIT_DESTINATIONS the addresses referenced by the array must be in D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE state.
+    D3D12_GPU_VIRTUAL_ADDRESS_AND_STRIDE                           resultSizeArray;         //!< [out] Address and stride of an array of 32bit values. If inputs.mode is equal to NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_MODE_EXPLICIT_DESTINATIONS, will be populated by the call with the projected sizes of each result object based on the provided input. Otherwise, this field is optional and will be populated with the sizes of the objects written to destinationAddressArray. Must be in D3D12_RESOURCE_STATE_UNORDERED_ACCESS state.
+    D3D12_GPU_VIRTUAL_ADDRESS_AND_STRIDE                           indirectArgArray;        //!< [in] Address and stride of an array of type determined by inputs.type, see NVAPI_D3D12_RAYTRACING_ACCELERATION_STRUCTURE_MULTI_INDIRECT_*_ARGS. Structures must be tightly packed and aligned to the default C structure alignment of the structures. The memory pointed to must be in state D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE.
+    D3D12_GPU_VIRTUAL_ADDRESS                                      indirectArgCount;        //!< [in] Determines the argument count, if 0 the value of inputs.maxArgCount will be used instead. If non-zero, the arrays in destinationAddressArray, resultSizeArray and indirectArgArray must all be equal to the argument count. The memory pointed to must be in state D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE.
+} NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_DESC;
+
+//! Parameters given to NvAPI_D3D12_RaytracingMultiIndirectClusterOperation().
+//!
+//! \ingroup dx
+typedef struct _NVAPI_RAYTRACING_EXECUTE_MULTI_INDIRECT_CLUSTER_OPERATION_PARAMS_V1
+{
+    NvU32                                                                        version;               //!< [in] Structure version; it should be set to #NVAPI_RAYTRACING_EXECUTE_MULTI_INDIRECT_CLUSTER_OPERATION_PARAMS_VER.
+    const NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_DESC*          pDesc;                 //!< [in] Description of the multi indirect operation.
+} NVAPI_RAYTRACING_EXECUTE_MULTI_INDIRECT_CLUSTER_OPERATION_PARAMS_V1;
+#define NVAPI_RAYTRACING_EXECUTE_MULTI_INDIRECT_CLUSTER_OPERATION_PARAMS_VER1          MAKE_NVAPI_VERSION(NVAPI_RAYTRACING_EXECUTE_MULTI_INDIRECT_CLUSTER_OPERATION_PARAMS_V1, 1)
+typedef NVAPI_RAYTRACING_EXECUTE_MULTI_INDIRECT_CLUSTER_OPERATION_PARAMS_V1            NVAPI_RAYTRACING_EXECUTE_MULTI_INDIRECT_CLUSTER_OPERATION_PARAMS;
+#define NVAPI_RAYTRACING_EXECUTE_MULTI_INDIRECT_CLUSTER_OPERATION_PARAMS_VER           NVAPI_RAYTRACING_EXECUTE_MULTI_INDIRECT_CLUSTER_OPERATION_PARAMS_VER1
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// FUNCTION NAME: NvAPI_D3D12_RaytracingExecuteMultiIndirectClusterOperation
+//
+//! DESCRIPTION: Execute a multi indirect cluster operation
+//!              The CPU-side input buffers are not referenced after this call.
+//!              The GPU-side input resources are not referenced after the build has concluded after <tt>ExecuteCommandList()</tt>.
+//!
+//! SUPPORTED OS:  Windows 10 and higher
+//!
+//!
+//! \since Release: 560
+//!
+//! \param [in]     pCommandList         DX command list
+//! \param [in]     pParams              API parameters
+//!
+//! \return This API can return any of the error codes enumerated in #NvAPI_Status.
+//!         If there are return error codes with specific meaning for this API, they are listed below.
+//!
+//! \retval ::NVAPI_OK                   Completed request
+//! \retval ::NVAPI_INVALID_POINTER      A null pointer was passed as command list, pParams or a required field within the pParams argument
+//! \retval ::NVAPI_INVALID_ARGUMENT     The pParams parameter was set in an invalid way
+//! \ingroup dx
+///////////////////////////////////////////////////////////////////////////////
+NVAPI_INTERFACE NvAPI_D3D12_RaytracingExecuteMultiIndirectClusterOperation(
+    __in ID3D12GraphicsCommandList4* pCommandList,
+    __in const NVAPI_RAYTRACING_EXECUTE_MULTI_INDIRECT_CLUSTER_OPERATION_PARAMS* pParams);
+
+//! Enumeration listing permitted flag values for NVAPI_D3D12_BUILD_RAYTRACING_PARTITIONED_TLAS_INDIRECT_INPUTS
+//!
+//! \ingroup dx
+typedef enum _NVAPI_D3D12_RAYTRACING_PARTITIONED_TLAS_FLAGS
+{
+    NVAPI_D3D12_RAYTRACING_PARTITIONED_TLAS_FLAG_NONE                         = 0x0,        //!< No option specified for the the partitioned TLAS
+    NVAPI_D3D12_RAYTRACING_PARTITIONED_TLAS_FLAG_FAST_TRACE                   = NV_BIT(0),  //!< Optimize the Partitioned TLAS for fast trace performance, mutually exclusive with NVAPI_D3D12_RAYTRACING_PARTITIONED_TLAS_FLAG_FAST_BUILD
+    NVAPI_D3D12_RAYTRACING_PARTITIONED_TLAS_FLAG_FAST_BUILD                   = NV_BIT(1),  //!< Optimize the Partitioned TLAS for fast update/build performance, mutually exclusive with NVAPI_D3D12_RAYTRACING_PARTITIONED_TLAS_FLAG_FAST_TRACE
+    NVAPI_D3D12_RAYTRACING_PARTITIONED_TLAS_FLAG_ENABLE_PARTITION_TRANSLATION = NV_BIT(2),  //!< Enable the partition translation feature of the Partitioned TLAS
+} NVAPI_D3D12_RAYTRACING_PARTITIONED_TLAS_FLAGS;
+
+//! Inputs describing the configuration of a Partitioned TLAS, used to determine the memory requirement structure and updates
+//!
+//! \ingroup dx
+typedef struct _NVAPI_D3D12_BUILD_RAYTRACING_PARTITIONED_TLAS_INDIRECT_INPUTS
+{
+    NVAPI_D3D12_RAYTRACING_PARTITIONED_TLAS_FLAGS                           flags;                             //!< See NVAPI_D3D12_RAYTRACING_PARTITIONED_TLAS_FLAGS
+    NvU32                                                                   instanceCount;                     //!< The instance count of the Partitioned TLAS. Maximum supported value is 2^24.
+    NvU32                                                                   maxInstancePerPartitionCount;      //!< The maximum number of instances that will ever be referenced by any single partition (excluding the global partition) of the Partitioned TLAS. Maximum supported value is 2^24.
+    NvU32                                                                   partitionCount;                    //!< The number of partitions of the Partitioned TLAS. Maximum supported value is 2^24.
+    NvU32                                                                   maxInstanceInGlobalPartitionCount; //!< The maximum number of instances that will ever be referenced by the global partition of the Partitioned TLAS. Maximum supported value is 2^24.
+} NVAPI_D3D12_BUILD_RAYTRACING_PARTITIONED_TLAS_INDIRECT_INPUTS;
+
+//! Structure describing the memory requirement of a Partitioned TLAS
+//!
+//! \ingroup dx
+typedef struct _NVAPI_D3D12_BUILD_RAYTRACING_PARTITIONED_TLAS_INDIRECT_PREBUILD_INFO
+{
+    NvU64 resultDataMaxSizeInBytes; //!< Size of the resulting Partitioned TLAS in bytes based on the specified inputs
+    NvU64 scratchDataSizeInBytes;   //!< Scratch storage on GPU required during builds/updates of the Partitioned TLAS based on the specified inputs
+} NVAPI_D3D12_BUILD_RAYTRACING_PARTITIONED_TLAS_INDIRECT_PREBUILD_INFO;
+
+//! Parameter structure for NvAPI_D3D12_GetRaytracingPartitionedTlasIndirectPrebuildInfo
+//!
+//! \ingroup dx
+typedef struct _NVAPI_GET_BUILD_RAYTRACING_PARTITIONED_TLAS_INDIRECT_PREBUILD_INFO_PARAMS_V1
+{
+    NvU32                                                                 version; //!< [in]  Structure version; it should be set to #NVAPI_GET_BUILD_RAYTRACING_PARTITIONED_TLAS_INDIRECT_PREBUILD_INFO_PARAMS_VER.
+    const NVAPI_D3D12_BUILD_RAYTRACING_PARTITIONED_TLAS_INDIRECT_INPUTS*  pInput;  //!< [in]  Description of the partitioned TLAS build
+    NVAPI_D3D12_BUILD_RAYTRACING_PARTITIONED_TLAS_INDIRECT_PREBUILD_INFO* pInfo;   //!< [out] Result of the query.
+} NVAPI_GET_BUILD_RAYTRACING_PARTITIONED_TLAS_INDIRECT_PREBUILD_INFO_PARAMS_V1;
+#define NVAPI_GET_BUILD_RAYTRACING_PARTITIONED_TLAS_INDIRECT_PREBUILD_INFO_PARAMS_VER1          MAKE_NVAPI_VERSION(NVAPI_GET_BUILD_RAYTRACING_PARTITIONED_TLAS_INDIRECT_PREBUILD_INFO_PARAMS_V1, 1)
+typedef NVAPI_GET_BUILD_RAYTRACING_PARTITIONED_TLAS_INDIRECT_PREBUILD_INFO_PARAMS_V1            NVAPI_GET_BUILD_RAYTRACING_PARTITIONED_TLAS_INDIRECT_PREBUILD_INFO_PARAMS;
+#define NVAPI_GET_BUILD_RAYTRACING_PARTITIONED_TLAS_INDIRECT_PREBUILD_INFO_PARAMS_VER           NVAPI_GET_BUILD_RAYTRACING_PARTITIONED_TLAS_INDIRECT_PREBUILD_INFO_PARAMS_VER1
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// FUNCTION NAME: NvAPI_D3D12_GetRaytracingPartitionedTlasIndirectPrebuildInfo
+//
+//! DESCRIPTION: Function call used to determine the memory requirements for a Partitioned TLAS
+//!
+//! SUPPORTED OS:  Windows 10 and higher
+//!
+//!
+//! \since Release: 560
+//!
+//! \param [in]     pDevice              The D3D device that will own the Partitioned TLAS
+//! \param [in,out] pParams              API parameters
+//!
+//! \return This API can return any of the error codes enumerated in #NvAPI_Status.
+//!         If there are return error codes with specific meaning for this API, they are listed below.
+//!
+//! \retval ::NVAPI_OK                   Completed request
+//! \retval ::NVAPI_INVALID_POINTER      A null pointer was passed as device or pParams argument
+//! \retval ::NVAPI_INVALID_ARGUMENT     The pParams parameter was set in an invalid way
+//! \ingroup dx
+///////////////////////////////////////////////////////////////////////////////
+NVAPI_INTERFACE NvAPI_D3D12_GetRaytracingPartitionedTlasIndirectPrebuildInfo(
+    __in    ID3D12Device5* pDevice,
+    __inout const NVAPI_GET_BUILD_RAYTRACING_PARTITIONED_TLAS_INDIRECT_PREBUILD_INFO_PARAMS* pParams);
+
+//! Enumeration listing permitted instance flag values for NVAPI_D3D12_BUILD_RAYTRACING_PARTITIONED_TLAS_OP_ARG_WRITE_INSTANCE
+//!
+//! \ingroup dx
+typedef enum _NVAPI_D3D12_RAYTRACING_PARTITIONED_TLAS_INSTANCE_FLAGS
+{
+    NVAPI_D3D12_RAYTRACING_PARTITIONED_TLAS_INSTANCE_FLAG_NONE                            = 0x0,        //!< [in] No options specified.
+    NVAPI_D3D12_RAYTRACING_PARTITIONED_TLAS_INSTANCE_FLAG_TRIANGLE_CULL_DISABLE           = NV_BIT(0),  //!< [in] Identical to D3D12_RAYTRACING_INSTANCE_FLAG_TRIANGLE_CULL_DISABLE
+    NVAPI_D3D12_RAYTRACING_PARTITIONED_TLAS_INSTANCE_FLAG_TRIANGLE_FRONT_COUNTERCLOCKWISE = NV_BIT(1),  //!< [in] Identical to D3D12_RAYTRACING_INSTANCE_FLAG_TRIANGLE_FRONT_COUNTERCLOCKWISE
+    NVAPI_D3D12_RAYTRACING_PARTITIONED_TLAS_INSTANCE_FLAG_FORCE_OPAQUE                    = NV_BIT(2),  //!< [in] Identical to D3D12_RAYTRACING_INSTANCE_FLAG_FORCE_OPAQUE
+    NVAPI_D3D12_RAYTRACING_PARTITIONED_TLAS_INSTANCE_FLAG_FORCE_NON_OPAQUE                = NV_BIT(3),  //!< [in] Identical to D3D12_RAYTRACING_INSTANCE_FLAG_FORCE_NON_OPAQUE
+    NVAPI_D3D12_RAYTRACING_PARTITIONED_TLAS_INSTANCE_FLAG_ENABLE_EXPLICIT_AABB            = NV_BIT(4),  //!< [in] Enables the usage of explicitly provided partition-space (if partition translation is enabled) or world-space bounds, reduces cost of NVAPI_D3D12_BUILD_RAYTRACING_PARTITIONED_TLAS_OP_UPDATE_PARTITION for affected instances
+} NVAPI_D3D12_RAYTRACING_PARTITIONED_TLAS_INSTANCE_FLAGS;
+
+//! Enumeration listing special reserved values for partition indices
+//!
+//! \ingroup dx
+typedef enum _NVAPI_D3D12_RAYTRACING_PARTITIONED_TLAS_PARTITION_INDEX
+{
+    NVAPI_D3D12_RAYTRACING_PARTITIONED_TLAS_PARTITION_INDEX_GLOBAL_PARTITION  = 0xffffffff, //!< [in] Used to select the global partition for a partition write operation
+} NVAPI_D3D12_RAYTRACING_PARTITIONED_TLAS_PARTITION_INDEX;
+
+//! Type determining what the type of an operation to apply to a partitioned TLAS, determines which argument structure is used
+//!
+//! \ingroup dx
+enum NVAPI_D3D12_BUILD_RAYTRACING_PARTITIONED_TLAS_OP_TYPE
+{
+    NVAPI_D3D12_BUILD_RAYTRACING_PARTITIONED_TLAS_OP_WRITE_INSTANCE   = 0, //!< [in] Write instance data, use with NVAPI_D3D12_BUILD_RAYTRACING_PARTITIONED_TLAS_OP_ARG_WRITE_INSTANCE
+    NVAPI_D3D12_BUILD_RAYTRACING_PARTITIONED_TLAS_OP_UPDATE_INSTANCE  = 1, //!< [in] Update instance data, use with NVAPI_D3D12_BUILD_RAYTRACING_PARTITIONED_TLAS_OP_ARG_UPDATE_INSTANCE
+    NVAPI_D3D12_BUILD_RAYTRACING_PARTITIONED_TLAS_OP_WRITE_PARTITION  = 2, //!< [in] Write partition data, use with NVAPI_D3D12_BUILD_RAYTRACING_PARTITIONED_TLAS_OP_ARG_WRITE_PARTITION
+};
+
+//! Argument structure for operation type NVAPI_D3D12_BUILD_RAYTRACING_PARTITIONED_TLAS_OP_WRITE_INSTANCE
+//!
+//! \ingroup dx
+struct NVAPI_D3D12_BUILD_RAYTRACING_PARTITIONED_TLAS_OP_ARG_WRITE_INSTANCE
+{
+    NvF32                      transform[3][4];                          //!< [in] Identical to Transform in D3D12_RAYTRACING_INSTANCE_DESC, except if set to all zero or if any value is NaN the instance is considered degenerate and will not be added to the resulting accelerations structure.
+    NvF32                      userAABB[6];                              //!< [in] 6 floating point values representing the min/max bounds of a world or partition space bounds of the vertices of the acceleration structure, ignored if NVAPI_D3D12_RAYTRACING_PARTITIONED_TLAS_INSTANCE_FLAG_ENABLE_EXPLICIT_AABB is not set
+    NvU32                      instanceID;                               //!< [in] Identical to InstanceID in D3D12_RAYTRACING_INSTANCE_DESC
+    NvU32                      instanceMask;                             //!< [in] Identical to InstanceMask in D3D12_RAYTRACING_INSTANCE_DESC
+    NvU32                      instanceContributionToHitGroupIndex;      //!< [in] Identical to InstanceContributionToHitGroupIndex in D3D12_RAYTRACING_INSTANCE_DESC
+    NvU32                      instanceFlags;                            //!< [in] See NVAPI_D3D12_RAYTRACING_PARTITIONED_TLAS_INSTANCE_FLAGS
+    NvU32                      instanceIndex;                            //!< [in] Select which instance to write with this argument struct, must be less than the instanceCount of the Partitioned TLAS. Each partition index may only be referenced by one instance write or update argument for each build call.
+    NvU32                      partitionIndex;                           //!< [in] Select the partition the instance is part of. Must be less than the partitionCount of the Partitioned TLAS.
+    D3D12_GPU_VIRTUAL_ADDRESS  accelerationStructure;                    //!< [in] Acceleration structure to set, see AccelerationStructure in D3D12_RAYTRACING_INSTANCE_DESC. If NVAPI_D3D12_RAYTRACING_PARTITIONED_TLAS_INSTANCE_FLAG_ENABLE_EXPLICIT_AABB was used, the existing bounds must cover the assigned acceleration structure (after transform is applied)
+                                                                         //!< When NULL the instance is inactive but still included in the build, it will not participate in any trace operations but may become active again when a non-NULL accelerationStructure is assigned to it.
+};
+
+//! Argument structure for operation type NVAPI_D3D12_BUILD_RAYTRACING_PARTITIONED_TLAS_OP_UPDATE_INSTANCE
+//!
+//! \ingroup dx
+struct NVAPI_D3D12_BUILD_RAYTRACING_PARTITIONED_TLAS_OP_ARG_UPDATE_INSTANCE
+{
+    NvU32                      instanceIndex;                            //!< [in] Select which instance to update with this argument struct, must be less than the instanceCount of the Partitioned TLAS. Each partition index may only be referenced by one instance write or update argument for each build call.
+    NvU32                      instanceContributionToHitGroupIndex;      //!< [in] Identical to InstanceContributionToHitGroupIndex in D3D12_RAYTRACING_INSTANCE_DESC
+    D3D12_GPU_VIRTUAL_ADDRESS  accelerationStructure;                    //!< [in] New acceleration structure to set, see AccelerationStructure in D3D12_RAYTRACING_INSTANCE_DESC. If NVAPI_D3D12_RAYTRACING_PARTITIONED_TLAS_INSTANCE_FLAG_ENABLE_EXPLICIT_AABB was used, the existing bounds must cover the newly assigned acceleration structure (after transform is applied)
+                                                                         //!< When NULL the instance is inactive but still included in the build, it will not participate in any trace operations but may become active again when a non-NULL accelerationStructure is assigned to it.
+};
+
+//! Argument structure for operation type NVAPI_D3D12_BUILD_RAYTRACING_PARTITIONED_TLAS_OP_WRITE_PARTITION
+//!
+//! \ingroup dx
+typedef struct NVAPI_D3D12_BUILD_RAYTRACING_PARTITIONED_TLAS_OP_ARG_WRITE_PARTITION
+{
+    NvU32                                partitionIndex;          //!< [in] Select which partition to write with this argument struct, must be either less than partition count or equal to NVAPI_D3D12_RAYTRACING_PARTITIONED_TLAS_PARTITION_INDEX_GLOBAL_PARTITION. Each partition index may only be referenced by one argument for each build call.
+    NvF32                                partitionTranslation[3]; //!< [in] The partition translation, all instances within this partition are translated by the X, Y, Z coordinates provided by this vector
+} NVAPI_D3D12_BUILD_RAYTRACING_PARTITIONED_TLAS_OP_ARG_WRITE_PARTITION;
+
+//! Describes an individual operation described by a type and array of parameters to apply as a modification to a Partitioned TLAS
+//!
+//! \ingroup dx
+typedef struct _NVAPI_D3D12_BUILD_RAYTRACING_PARTITIONED_TLAS_OP
+{
+    NVAPI_D3D12_BUILD_RAYTRACING_PARTITIONED_TLAS_OP_TYPE  type;   //!< [in] Identify the type of operation to apply, determines the type of the array referenced by data. See NVAPI_D3D12_BUILD_RAYTRACING_PARTITIONED_TLAS_OP_TYPE. Each type may only be referenced once by each call to NvAPI_D3D12_BuildRaytracingPartitionedTlasIndirect
+    NvU32                                                  count;  //!< [in] The number of elements of the argument array referenced by data
+    D3D12_GPU_VIRTUAL_ADDRESS_AND_STRIDE                   data;   //!< [in] The address and stride of a device array of argument structures determined by type. Must be aligned based on C structure alignment requirements of the referenced structure.
+} NVAPI_D3D12_BUILD_RAYTRACING_PARTITIONED_TLAS_OP;
+
+//! Describes the parameters for building a Partitioned TLAS
+//!
+//! \ingroup dx
+typedef struct _NVAPI_D3D12_BUILD_RAYTRACING_PARTITIONED_TLAS_INDIRECT_DESC
+{
+    NVAPI_D3D12_BUILD_RAYTRACING_PARTITIONED_TLAS_INDIRECT_INPUTS      inputs;                           //!< [in] The inputs previously used with NvAPI_D3D12_GetRaytracingPartitionedTlasIndirectPrebuildInfo to determine the memory requirement for the Partitioned TLAS
+    D3D12_GPU_VIRTUAL_ADDRESS                                          srcAccelerationStructureData;     //!< [in] Either 0 to construct a new Partitioned TLAS or the pointer to a previously constructed Partitioned TLAS, all its content will be inherited. If set, must be in state D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE and aligned to D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BYTE_ALIGNMENT.
+    D3D12_GPU_VIRTUAL_ADDRESS                                          destAccelerationStructureData;    //!< [in] The destination address to construct the new Partitioned TLAS, if it overlaps with the srcAccelerationStructureData address, the previous Partitioned TLAS will become invalid. Must have enough memory as determined by NvAPI_D3D12_GetRaytracingPartitionedTlasIndirectPrebuildInfo. Must be in state D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE and aligned to D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BYTE_ALIGNMENT.
+    D3D12_GPU_VIRTUAL_ADDRESS                                          scratchAccelerationStructureData; //!< [in] Address of scratch memory used during the build call, size must be determined by NvAPI_D3D12_GetRaytracingPartitionedTlasIndirectPrebuildInfo. Must be in state D3D12_RESOURCE_STATE_UNORDERED_ACCESS and aligned to D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BYTE_ALIGNMENT.
+    D3D12_GPU_VIRTUAL_ADDRESS                                          indirectOpCount;                  //!< [in] Address of device memory containing the 32-bit unsigned integer containing the size of the indirectOps array. The memory pointed to must be in state D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE.
+    D3D12_GPU_VIRTUAL_ADDRESS                                          indirectOps;                      //!< [in] Address of device memory containing the array of NVAPI_D3D12_BUILD_RAYTRACING_PARTITIONED_TLAS_OP with size equal to the value referenced by indirectOpCount. The memory pointed to must be in state D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE.
+} NVAPI_D3D12_BUILD_RAYTRACING_PARTITIONED_TLAS_INDIRECT_DESC; 
+
+//! Parameters given to NvAPI_D3D12_BuildRaytracingPartitionedTlasIndirect().
+//!
+//! \ingroup dx
+typedef struct _NVAPI_BUILD_RAYTRACING_PARTITIONED_TLAS_INDIRECT_PARAMS_V1
+{
+    NvU32                                                                              version;               //!< [in] Structure version; it should be set to #NVAPI_BUILD_RAYTRACING_PARTITIONED_TLAS_INDIRECT_PARAMS_VER.
+    const NVAPI_D3D12_BUILD_RAYTRACING_PARTITIONED_TLAS_INDIRECT_DESC*                 pDesc;                 //!< [in] Description of the Partitioned TLAS build.
+} NVAPI_BUILD_RAYTRACING_PARTITIONED_TLAS_INDIRECT_PARAMS_V1;
+#define NVAPI_BUILD_RAYTRACING_PARTITIONED_TLAS_INDIRECT_PARAMS_VER1          MAKE_NVAPI_VERSION(NVAPI_BUILD_RAYTRACING_PARTITIONED_TLAS_INDIRECT_PARAMS_V1, 1)
+typedef NVAPI_BUILD_RAYTRACING_PARTITIONED_TLAS_INDIRECT_PARAMS_V1            NVAPI_BUILD_RAYTRACING_PARTITIONED_TLAS_INDIRECT_PARAMS;
+#define NVAPI_BUILD_RAYTRACING_PARTITIONED_TLAS_INDIRECT_PARAMS_VER           NVAPI_BUILD_RAYTRACING_PARTITIONED_TLAS_INDIRECT_PARAMS_VER1
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// FUNCTION NAME: NvAPI_D3D12_BuildRaytracingPartitionedTlasIndirect
+//
+//! DESCRIPTION: Builds a Partitioned TLAS
+//!              The CPU-side input buffers are not referenced after this call.
+//!              The GPU-side input resources are not referenced after the build has concluded after <tt>ExecuteCommandList()</tt>.
+//!
+//! SUPPORTED OS:  Windows 10 and higher
+//!
+//!
+//! \since Release: 560
+//!
+//! \param [in]     pCommandList         DX command list
+//! \param [in]     pParams              API parameters
+//!
+//! \return This API can return any of the error codes enumerated in #NvAPI_Status.
+//!         If there are return error codes with specific meaning for this API, they are listed below.
+//!
+//! \retval ::NVAPI_OK                   Completed request
+//! \retval ::NVAPI_INVALID_POINTER      A null pointer was passed as command list or pParams argument
+//! \retval ::NVAPI_INVALID_ARGUMENT     The pParams parameter was set in an invalid way
+//! \ingroup dx
+///////////////////////////////////////////////////////////////////////////////
+NVAPI_INTERFACE NvAPI_D3D12_BuildRaytracingPartitionedTlasIndirect(
+    __in ID3D12GraphicsCommandList4* pCommandList,
+    __in const NVAPI_BUILD_RAYTRACING_PARTITIONED_TLAS_INDIRECT_PARAMS* pParams);
+
+#endif // defined(__cplusplus) && defined(__d3d12_h__) && defined(__ID3D12Device5_INTERFACE_DEFINED__)
+
+//-----------------------------------------------------------------------------
+// NGX APIs
+//-----------------------------------------------------------------------------
+
+typedef enum {
+    NV_NGX_DLSS_OVERRIDE_FLAG_INITIALIZED       = NV_BIT(0),
+    NV_NGX_DLSS_OVERRIDE_FLAG_ENABLED           = NV_BIT(1),
+    NV_NGX_DLSS_OVERRIDE_FLAG_DLL_EXISTS        = NV_BIT(2),
+    NV_NGX_DLSS_OVERRIDE_FLAG_DLL_LOADED        = NV_BIT(3),
+    NV_NGX_DLSS_OVERRIDE_FLAG_DLL_SELECTED      = NV_BIT(4),
+    NV_NGX_DLSS_OVERRIDE_FLAG_PRESET            = NV_BIT(5),
+    NV_NGX_DLSS_OVERRIDE_FLAG_PERF_MODE         = NV_BIT(6),
+    NV_NGX_DLSS_OVERRIDE_FLAG_SCALING_RATIO     = NV_BIT(7),
+    NV_NGX_DLSS_OVERRIDE_FLAG_OPTIMAL_SETTINGS  = NV_BIT(8),
+    NV_NGX_DLSS_OVERRIDE_FLAG_CREATED           = NV_BIT(9),
+
+    NV_NGX_DLSS_OVERRIDE_FLAG_SR_DLAA_MODE      = NV_BIT(14),
+    NV_NGX_DLSS_OVERRIDE_FLAG_FG_MULTI_FRAME    = NV_BIT(15),
+
+    NV_NGX_DLSS_OVERRIDE_FLAG_ERR_FAILED        = NV_BIT(16),
+    NV_NGX_DLSS_OVERRIDE_FLAG_ERR_DENIED        = NV_BIT(17),
+    NV_NGX_DLSS_OVERRIDE_FLAG_ERR_DRS           = NV_BIT(18),
+    NV_NGX_DLSS_OVERRIDE_FLAG_ERR_NOT_FOUND     = NV_BIT(19),
+    NV_NGX_DLSS_OVERRIDE_FLAG_ERR_DLL_LOAD      = NV_BIT(20),
+} NV_NGX_DLSS_OVERRIDE_BITFIELD;
+
+#define NV_NGX_DLSS_OVERRIDE_FEATURE_INDEX_SR       1
+#define NV_NGX_DLSS_OVERRIDE_FEATURE_INDEX_RR       2
+#define NV_NGX_DLSS_OVERRIDE_FEATURE_INDEX_FG       3
+
+typedef struct _NV_NGX_DLSS_OVERRIDE_GET_STATE_PARAMS_V1
+{
+    NvU32  version;                 //!< [in] Structure version
+    NvU32  processIdentifier;       //!< [in] Process Identifier
+    NvU64  feedbackMaskSR;          //!< [out] Feedback bits for Super Resolution
+    NvU64  feedbackMaskRR;          //!< [out] Feedback bits for Ray Reconstruction
+    NvU64  feedbackMaskFG;          //!< [out] Feedback bits for Frame Generation
+    NvU64  reserved[4];             //!< Reserved for future use. Must be zero.
+} NV_NGX_DLSS_OVERRIDE_GET_STATE_PARAMS_V1;
+
+#define NV_NGX_DLSS_OVERRIDE_GET_STATE_PARAMS_VER1  MAKE_NVAPI_VERSION(NV_NGX_DLSS_OVERRIDE_GET_STATE_PARAMS_V1, 1)
+#define NV_NGX_DLSS_OVERRIDE_GET_STATE_PARAMS_VER   NV_NGX_DLSS_OVERRIDE_GET_STATE_PARAMS_VER1
+typedef NV_NGX_DLSS_OVERRIDE_GET_STATE_PARAMS_V1    NV_NGX_DLSS_OVERRIDE_GET_STATE_PARAMS;
+///////////////////////////////////////////////////////////////////////////////
+//
+// FUNCTION NAME: NvAPI_NGX_GetNGXOverrideState
+//
+//! DESCRIPTION: This API returns the current state of NGX Override for a given process.
+//!
+//!
+//! SUPPORTED OS:  Windows 10 and higher
+//!
+//!
+//!
+//! \since Release: 570
+//!
+//! \param [inout]   pGetOverrideStateParams  //!< [inout] Sets listening version and PID returns state flags for active features
+//!
+//! \return  This API can return any of the error codes enumerated in #NvAPI_Status.
+//!
+//! \ingroup dx
+///////////////////////////////////////////////////////////////////////////////
+NVAPI_INTERFACE NvAPI_NGX_GetNGXOverrideState(__inout NV_NGX_DLSS_OVERRIDE_GET_STATE_PARAMS* pGetOverrideStateParams);
+
+typedef struct _NV_NGX_DLSS_OVERRIDE_SET_STATE_PARAMS_V1
+{
+    NvU32  version;                 //!< [in] Structure version
+    NvU32  processIdentifier;       //!< [in] Process identifier of caller
+    NvU32  feature;                 //!< [in] DLSS feature ID
+    NvU64  feedbackMask;            //!< [in] Feedback bits for DLSS feature
+    NvU64  reserved[4];             //!< Reserved for future use. Must be zero.
+} NV_NGX_DLSS_OVERRIDE_SET_STATE_PARAMS_V1;
+
+#define NV_NGX_DLSS_OVERRIDE_SET_STATE_PARAMS_VER1  MAKE_NVAPI_VERSION(NV_NGX_DLSS_OVERRIDE_SET_STATE_PARAMS_V1, 1)
+#define NV_NGX_DLSS_OVERRIDE_SET_STATE_PARAMS_VER   NV_NGX_DLSS_OVERRIDE_SET_STATE_PARAMS_VER1
+typedef NV_NGX_DLSS_OVERRIDE_SET_STATE_PARAMS_V1    NV_NGX_DLSS_OVERRIDE_SET_STATE_PARAMS;
+///////////////////////////////////////////////////////////////////////////////
+//
+// FUNCTION NAME: NvAPI_NGX_SetNGXOverrideState
+//
+//! DESCRIPTION: This API sets the state of NGX Override from a filtered process.
+//!
+//!
+//! SUPPORTED OS:  Windows 10 and higher
+//!
+//!
+//!
+//! \since Release: 570
+//!
+//! \param [in]   pSetOverrideStateParams  //!< [in] Sets the override state using a preselected PID
+//!
+//! \return  This API can return any of the error codes enumerated in #NvAPI_Status.
+//!
+//! \ingroup dx
+///////////////////////////////////////////////////////////////////////////////
+NVAPI_INTERFACE NvAPI_NGX_SetNGXOverrideState(__in NV_NGX_DLSS_OVERRIDE_SET_STATE_PARAMS* pSetOverrideStateParams);
+
 
 //! SUPPORTED OS:  Windows 10 and higher
 //!
@@ -23983,6 +25178,216 @@ typedef NV_GPU_CLIENT_UTILIZATION_PERIODIC_CALLBACK_SETTINGS_V1    NV_GPU_CLIENT
 ///////////////////////////////////////////////////////////////////////////////
 NVAPI_INTERFACE NvAPI_GPU_ClientRegisterForUtilizationSampleUpdates(__in NvPhysicalGpuHandle hPhysicalGpu, __in NV_GPU_CLIENT_UTILIZATION_PERIODIC_CALLBACK_SETTINGS* pCallbackSettings);
 
+
+/*!
+ * Enumeration of different RISE content types.
+ */
+typedef enum _NV_RISE_CONTENT_TYPE
+{
+    NV_RISE_CONTENT_TYPE_INVALID                  = 0,
+    NV_RISE_CONTENT_TYPE_TEXT                     = 1,
+    NV_RISE_CONTENT_TYPE_GRAPH                    = 2,
+    NV_RISE_CONTENT_TYPE_CUSTOM_BEHAVIOR          = 3,
+    NV_RISE_CONTENT_TYPE_CUSTOM_BEHAVIOR_RESULT   = 4,
+    NV_RISE_CONTENT_TYPE_INSTALLING               = 5,
+    NV_RISE_CONTENT_TYPE_PROGRESS_UPDATE          = 6,
+    NV_RISE_CONTENT_TYPE_READY                    = 7,
+    NV_RISE_CONTENT_TYPE_DOWNLOAD_REQUEST         = 8
+} NV_RISE_CONTENT_TYPE;
+
+/*!
+ * Data passed back to callback.
+ */
+typedef struct _NV_RISE_CALLBACK_DATA_V1
+{
+    /*!
+     * Super struct.
+     */
+    NV_CLIENT_CALLBACK_SETTINGS_SUPER_V1 super;
+
+    /*!
+     * RISE type of content
+     */
+    NV_RISE_CONTENT_TYPE contentType;
+
+    /*!
+     * RISE content.
+     */
+    NvAPI_String content;
+
+    /*!
+     * Is this the last in the batch?
+     */
+    NvBool completed;
+
+} NV_RISE_CALLBACK_DATA_V1;
+
+/*!
+ * Callback for RISE update callbacks.
+ */
+typedef void (__cdecl *NV_RISE_CALLBACK_V1)(NV_RISE_CALLBACK_DATA_V1 *pData);
+
+/*!
+ * Data required to register an update callback from the RISE.
+ */
+typedef struct _NV_RISE_CALLBACK_SETTINGS_V1
+{
+    /*!
+     * [in] Structure Version, must always be first.
+     */
+    NvU32 version;
+
+    /*!
+     * [in] Generic callback parameter which will be passed to the callback.
+     */
+    NV_CLIENT_CALLBACK_SETTINGS_SUPER_V1 super;
+
+    /*!
+     * [in] Callback. Pass in NULL or nullptr to indicate request to unregister.
+     */
+    NV_RISE_CALLBACK_V1 callback;
+
+    /*!
+     * Reserved, must be set to zero by client.
+     */
+    NvU8  reserved[32];
+
+} NV_RISE_CALLBACK_SETTINGS_V1;
+
+#define NV_RISE_CALLBACK_SETTINGS_VER1  MAKE_NVAPI_VERSION(NV_RISE_CALLBACK_SETTINGS_V1, 1)
+typedef NV_RISE_CALLBACK_SETTINGS_V1    NV_RISE_CALLBACK_SETTINGS;
+#define NV_RISE_CALLBACK_SETTINGS_VER   NV_RISE_CALLBACK_SETTINGS_VER1
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// FUNCTION NAME: NvAPI_RegisterRiseCallback
+//
+//! \fn NvAPI_RegisterRiseCallback()
+//! \code
+//!   DESCRIPTION: Registers a callback for RISE to invoke an interaction
+//!                back to the RISE client.
+//!
+//! SUPPORTED OS:  Windows 10 and higher
+//!
+//!
+//! \since Release r570
+//!
+//! \return        NVAPI_OK                          - Registration was successful
+//!                NVAPI_API_NOT_INITIALIZED         - NVAPI not initialized
+//!                NVAPI_INCOMPATIBLE_STRUCT_VERSION - Invalid structure version specified
+//!                NVAPI_ERROR                       - Unknown underlying error
+//!
+//! \endcode
+//! \ingroup nvtopps
+///////////////////////////////////////////////////////////////////////////////
+NVAPI_INTERFACE NvAPI_RegisterRiseCallback(__in NV_RISE_CALLBACK_SETTINGS* pCallbackSettings);
+
+
+/*!
+ * Request contents sent to RISE.
+ */
+typedef struct _NV_REQUEST_RISE_SETTINGS_V1
+{
+    /*!
+     * [in] Structure Version, must always be first.
+     */
+    NvU32 version;
+
+    /*!
+     * RISE type of content
+     */
+    NV_RISE_CONTENT_TYPE contentType;
+
+    /*!
+     * RISE request content.
+     */
+    NvAPI_String content;
+
+    /*!
+     * Is the request fully sent?
+     */
+    NvBool completed;
+
+    /*!
+     * Reserved, must be set to zero by client.
+     */
+    NvU8  reserved[32];
+} NV_REQUEST_RISE_SETTINGS_V1;
+
+#define NV_REQUEST_RISE_SETTINGS_VER1  			 MAKE_NVAPI_VERSION(NV_REQUEST_RISE_SETTINGS_V1, 1)
+typedef NV_REQUEST_RISE_SETTINGS_V1    			 NV_REQUEST_RISE_SETTINGS;
+#define NV_REQUEST_RISE_SETTINGS_VER   			 NV_REQUEST_RISE_SETTINGS_VER1
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// FUNCTION NAME: NvAPI_RequestRise
+//
+//! \fn NvAPI_RequestRise()
+//! \code
+//!   DESCRIPTION: Request RISE assistance. Callback must be registered via
+//                 NvAPI_RegisterRiseCallback.
+//!
+//! SUPPORTED OS:  Windows 10 and higher
+//!
+//!
+//! \since Release r570
+//!
+//! \return        NVAPI_OK                          - Registration was successful
+//!                NVAPI_API_NOT_INITIALIZED         - NVAPI not initialized
+//!                NVAPI_INCOMPATIBLE_STRUCT_VERSION - Invalid structure version specified
+//!                NVAPI_INVALID_CONFIGURATION       - Invalid software environment configuration
+//!                NVAPI_ERROR                       - Unknown underlying error
+//!
+//! \endcode
+//! \ingroup nvtopps
+///////////////////////////////////////////////////////////////////////////////
+NVAPI_INTERFACE NvAPI_RequestRise(__in NV_REQUEST_RISE_SETTINGS* requestContent);
+
+
+/*!
+ * Request contents sent to RISE.
+ */
+typedef struct _NV_UNINSTALL_RISE_SETTINGS_V1
+{
+    /*!
+     * [in] Structure Version, must always be first.
+     */
+    NvU32 version;
+
+    /*!
+     * Reserved, must be set to zero by client.
+     */
+    NvU8  reserved[32];
+} NV_UNINSTALL_RISE_SETTINGS_V1;
+
+#define NV_UNINSTALL_RISE_SETTINGS_VER1  			 MAKE_NVAPI_VERSION(NV_UNINSTALL_RISE_SETTINGS_V1, 1)
+typedef NV_UNINSTALL_RISE_SETTINGS_V1    			 NV_UNINSTALL_RISE_SETTINGS;
+#define NV_UNINSTALL_RISE_SETTINGS_VER   			 NV_UNINSTALL_RISE_SETTINGS_VER1
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// FUNCTION NAME: NvAPI_UninstallRise
+//
+//! \fn NvAPI_UninstallRise()
+//! \code
+//!   DESCRIPTION: Uninstalls RISE from the machine. Fails if any clients are
+//                 registered via NvAPI_RegisterRiseCallback.
+//!
+//! SUPPORTED OS:  Windows 10 and higher
+//!
+//!
+//! \since Release r570
+//!
+//! \return        NVAPI_OK                          - Registration was successful
+//!                NVAPI_API_NOT_INITIALIZED         - NVAPI not initialized
+//!                NVAPI_INCOMPATIBLE_STRUCT_VERSION - Invalid structure version specified
+//!                NVAPI_INVALID_CONFIGURATION       - Invalid software environment configuration
+//!                NVAPI_ERROR                       - Unknown underlying error
+//!
+//! \endcode
+//! \ingroup nvtopps
+///////////////////////////////////////////////////////////////////////////////
+NVAPI_INTERFACE NvAPI_UninstallRise(__in NV_UNINSTALL_RISE_SETTINGS* requestContent);
 
 
 

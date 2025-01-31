@@ -46,6 +46,12 @@ extern "C" {
 #endif
 #endif
 
+#define NV_U8_MAX       (+255U)
+#define NV_U16_MAX      (+65535U)
+#define NV_S32_MAX      (+2147483647)
+#define NV_U32_MIN      (0U)
+#define NV_U32_MAX      (+4294967295U)
+#define NV_U64_MAX      (+18446744073709551615ULL)
 
 /* 64-bit types for compilers that support them, plus some obsolete variants */
 #if defined(__GNUC__) || defined(__arm) || defined(__IAR_SYSTEMS_ICC__) || defined(__ghs__) || defined(_WIN64)
@@ -54,6 +60,10 @@ typedef long long          NvS64; /* -9223372036854775808 to 9223372036854775807
 #else
 typedef unsigned __int64   NvU64; /* 0 to 18446744073709551615  */
 typedef __int64            NvS64; /* -9223372036854775808 to 9223372036854775807  */
+#endif
+
+#ifndef NVAPI_USE_STDINT
+#define NVAPI_USE_STDINT 0
 #endif
 
 #if NVAPI_USE_STDINT
@@ -69,7 +79,7 @@ typedef signed long        NvS32; /* -2147483648 to 2147483647  */
 typedef signed int         NvS32; /* -2147483648 to 2147483647 */  
 #endif
 
-#if !(NVOS_IS_UNIX ||  (defined(__unix)))
+#if !((defined(NV_UNIX)) ||  (defined(__unix)))
 // mac os 32-bit still needs this
 #if ( (defined(macintosh) && defined(__LP64__) && (__NVAPI_RESERVED0__)) || \
       (!defined(macintosh) && defined(__NVAPI_RESERVED0__)) ) 
@@ -99,6 +109,7 @@ typedef double           NvF64;
  */
 #define NvF32TONvU32(_pData) *(NvU32 *)(_pData)
 
+#define NVAPI_SDK_VERSION 57218
 /* Boolean type */
 typedef NvU8 NvBool;
 #define NV_TRUE           ((NvBool)(0 == 0))
@@ -131,6 +142,7 @@ NV_DECLARE_HANDLE(NvMonitorHandle);                //!< Monitor handle
 NV_DECLARE_HANDLE(NvUnAttachedDisplayHandle);      //!< Unattached Display Device driven by NVIDIA GPU(s)
 NV_DECLARE_HANDLE(NvVisualComputingDeviceHandle);  //!< A handle to a Visual Computing Device
 NV_DECLARE_HANDLE(NvEventHandle);                  //!< A handle to an event registration instance
+NV_DECLARE_HANDLE(NvDLADeviceHandle);              //!< A handle to a DLA device
 
 
 NV_DECLARE_HANDLE(NvHICHandle);                    //!< A handle to a Host Interface Card

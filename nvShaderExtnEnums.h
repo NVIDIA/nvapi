@@ -115,6 +115,36 @@
 #define NV_EXTN_OP_RT_MICRO_VERTEX_OBJECT_POSITION         91
 #define NV_EXTN_OP_RT_MICRO_VERTEX_BARYCENTRICS            92
 
+// Megageometry API
+#define NV_EXTN_OP_RT_GET_CLUSTER_ID                        93
+#define NV_EXTN_OP_RT_GET_CANDIDATE_CLUSTER_ID              94
+#define NV_EXTN_OP_RT_GET_COMMITTED_CLUSTER_ID              95
+#define NV_EXTN_OP_HIT_OBJECT_GET_CLUSTER_ID                96
+#define NV_EXTN_OP_RT_CANDIDATE_TRIANGLE_OBJECT_POSITIONS   97
+#define NV_EXTN_OP_RT_COMMITTED_TRIANGLE_OBJECT_POSITIONS   98
+#define NV_EXTN_OP_HIT_OBJECT_GET_TRIANGLE_OBJECT_POSITIONS 99
+
+// Linear Swept Sphere API
+#define NV_EXTN_OP_RT_SPHERE_OBJECT_POSITION_AND_RADIUS             100
+#define NV_EXTN_OP_RT_CANDIDATE_SPHERE_OBJECT_POSITION_AND_RADIUS   101
+#define NV_EXTN_OP_RT_COMMITTED_SPHERE_OBJECT_POSITION_AND_RADIUS   102
+#define NV_EXTN_OP_HIT_OBJECT_GET_SPHERE_OBJECT_POSITION_AND_RADIUS 103
+#define NV_EXTN_OP_RT_LSS_OBJECT_POSITIONS_AND_RADII                104
+#define NV_EXTN_OP_RT_CANDIDATE_LSS_OBJECT_POSITIONS_AND_RADII      105
+#define NV_EXTN_OP_RT_COMMITTED_LSS_OBJECT_POSITIONS_AND_RADII      106
+#define NV_EXTN_OP_HIT_OBJECT_GET_LSS_OBJECT_POSITIONS_AND_RADII    107
+#define NV_EXTN_OP_RT_IS_SPHERE_HIT                                 108
+#define NV_EXTN_OP_RT_CANDIDATE_IS_NONOPAQUE_SPHERE                 109
+#define NV_EXTN_OP_RT_COMMITTED_IS_SPHERE                           110
+#define NV_EXTN_OP_HIT_OBJECT_IS_SPHERE_HIT                         111
+#define NV_EXTN_OP_RT_IS_LSS_HIT                                    112
+#define NV_EXTN_OP_RT_CANDIDATE_IS_NONOPAQUE_LSS                    113
+#define NV_EXTN_OP_RT_COMMITTED_IS_LSS                              114
+#define NV_EXTN_OP_HIT_OBJECT_IS_LSS_HIT                            115
+#define NV_EXTN_OP_RT_CANDIDATE_LSS_HIT_PARAMETER                   116
+#define NV_EXTN_OP_RT_COMMITTED_LSS_HIT_PARAMETER                   117
+#define NV_EXTN_OP_RT_CANDIDATE_BUILTIN_PRIMITIVE_RAY_T             118
+#define NV_EXTN_OP_RT_COMMIT_NONOPAQUE_BUILTIN_PRIMITIVE_HIT        119
 //----------------------------------------------------------------------------//
 //-------------------- GET_SPECIAL subOpCode constants -----------------------//
 //----------------------------------------------------------------------------//
@@ -140,3 +170,10 @@
 //---------------------------------------------------------------------------//
 #define NV_EXTN_FOOTPRINT_MODE_FINE                         0
 #define NV_EXTN_FOOTPRINT_MODE_COARSE                       1
+
+//----------------------------------------------------------------------------//
+//--------------------------- Cluster Constants  -----------------------------//
+//----------------------------------------------------------------------------//
+
+#define NV_EXTN_CLUSTER_ID_INVALID                 0xffffffff
+
