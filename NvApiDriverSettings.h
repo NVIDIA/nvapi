@@ -132,6 +132,7 @@
 #define LODBIASADJUST_STRING                       L"Texture filtering - LOD Bias"
 #define MAXWELL_B_SAMPLE_INTERLEAVE_STRING         L"Enable sample interleaving (MFAA)"
 #define PRERENDERLIMIT_STRING                      L"Maximum pre-rendered frames"
+#define PS_OFFLINE_SHADER_COMPILER_STRING          L"Offline Shader Compile"
 #define PS_SHADERDISKCACHE_STRING                  L"Shader Cache"
 #define PS_SHADERDISKCACHE_DLL_PATH_WCHAR_STRING   L"shader cache path to dll"
 #define PS_SHADERDISKCACHE_MAX_SIZE_STRING         L"Shader disk cache maximum size"
@@ -253,6 +254,7 @@ enum ESetting {
     LODBIASADJUST_ID                              = 0x00738E8F,
     MAXWELL_B_SAMPLE_INTERLEAVE_ID                = 0x0098C1AC,
     PRERENDERLIMIT_ID                             = 0x007BA09E,
+    PS_OFFLINE_SHADER_COMPILER_ID                 = 0x00D74EF6,
     PS_SHADERDISKCACHE_ID                         = 0x00198FFF,
     PS_SHADERDISKCACHE_DLL_PATH_WCHAR_ID          = 0x0019A002,
     PS_SHADERDISKCACHE_MAX_SIZE_ID                = 0x00AC8497,
@@ -267,9 +269,9 @@ enum ESetting {
     SET_VAB_DATA_ID                               = 0x00AB8687,
     VSYNCMODE_ID                                  = 0x00A879CF,
     VSYNCTEARCONTROL_ID                           = 0x005A375C,
-    TOTAL_DWORD_SETTING_NUM = 114,
+    TOTAL_DWORD_SETTING_NUM = 115,
     TOTAL_WSTRING_SETTING_NUM = 5,
-    TOTAL_SETTING_NUM = 119,
+    TOTAL_SETTING_NUM = 120,
     INVALID_SETTING_ID = 0xFFFFFFFF
 };
 
@@ -1214,6 +1216,13 @@ enum EValues_PRERENDERLIMIT {
     PRERENDERLIMIT_DEFAULT = PRERENDERLIMIT_APP_CONTROLLED
 };
 
+enum EValues_PS_OFFLINE_SHADER_COMPILER {
+    PS_OFFLINE_SHADER_COMPILER_OFF                       = 0x07184358,
+    PS_OFFLINE_SHADER_COMPILER_ON                        = 0x64318112,
+    PS_OFFLINE_SHADER_COMPILER_NUM_VALUES = 2,
+    PS_OFFLINE_SHADER_COMPILER_DEFAULT = PS_OFFLINE_SHADER_COMPILER_OFF
+};
+
 enum EValues_PS_SHADERDISKCACHE {
     PS_SHADERDISKCACHE_OFF                               = 0x00000000,
     PS_SHADERDISKCACHE_ON                                = 0x00000001,
@@ -1225,7 +1234,7 @@ enum EValues_PS_SHADERDISKCACHE_MAX_SIZE {
     PS_SHADERDISKCACHE_MAX_SIZE_MIN                      = 0x0,
     PS_SHADERDISKCACHE_MAX_SIZE_MAX                      = 0xffffffff,
     PS_SHADERDISKCACHE_MAX_SIZE_NUM_VALUES = 2,
-    PS_SHADERDISKCACHE_MAX_SIZE_DEFAULT = 0x3000
+    PS_SHADERDISKCACHE_MAX_SIZE_DEFAULT = 0x4000
 };
 
 enum EValues_PS_TEXFILTER_ANISO_OPTS2 {
