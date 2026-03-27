@@ -1,6 +1,6 @@
 /*********************************************************************************************************\
 |*                                                                                                        *|
-|* SPDX-FileCopyrightText: Copyright (c) 2019-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.  *|
+|* SPDX-FileCopyrightText: Copyright (c) 2019-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.  *|
 |* SPDX-License-Identifier: MIT                                                                           *|
 |*                                                                                                        *|
 |* Permission is hereby granted, free of charge, to any person obtaining a                                *|
@@ -25,7 +25,7 @@
 \*********************************************************************************************************/
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
-// Date: Dec 4, 2025 
+// Date: Mar 17, 2026 
 // File: nvapi.h
 //
 // NvAPI provides an interface to NVIDIA devices. This file contains the 
@@ -4602,6 +4602,41 @@ typedef NV_GPU_GSP_INFO_V1               NV_GPU_GSP_INFO;
 ///////////////////////////////////////////////////////////////////////////////
 NVAPI_INTERFACE NvAPI_GPU_GetGspFeatures(__in NvPhysicalGpuHandle hPhysicalGpu, __inout NV_GPU_GSP_INFO *pGspInfo);
 
+///////////////////////////////////////////////////////////////////////////////
+//
+// FUNCTION NAME: NvAPI_GPU_GetUUID
+//
+//! \fn NvAPI_GPU_GetUUID(NvPhysicalGpuHandle hPhysicalGpu, NV_GPU_UUID *pGpuUuid)
+//!  DESCRIPTION: This function returns the GPU UUID for the specified physical GPU handle.
+//!               The UUID is returned in GUID format (16 bytes).
+//!
+//! SUPPORTED OS:  Windows 10 and higher
+//!
+//!
+//! TCC_SUPPORTED
+//!
+//! MCDM_SUPPORTED
+//!
+//! \since Release: 595
+//!
+//! \param [in]     hPhysicalGpu   Physical GPU handle to get UUID for
+//! \param [in,out] pGpuUuid       Pointer to structure that will receive the GPU UUID
+//!
+//! \retval NVAPI_OK                            Request completed successfully
+//! \return This API can return any of the error codes enumerated in #NvAPI_Status.
+//!
+//! \ingroup gpu
+///////////////////////////////////////////////////////////////////////////////
+//! Used in NvAPI_GPU_GetUUID()
+typedef struct _NV_GPU_UUID_V1
+{
+    NvU32   version;                  // structure version
+    NvU8    uuid[NVAPI_UUID_LEN];     // GPU UUID in GUID format (16 bytes)
+} NV_GPU_UUID_V1;
+typedef NV_GPU_UUID_V1    NV_GPU_UUID;
+#define NV_GPU_UUID_VER1  MAKE_NVAPI_VERSION(NV_GPU_UUID_V1,1)
+#define NV_GPU_UUID_VER   NV_GPU_UUID_VER1
+NVAPI_INTERFACE NvAPI_GPU_GetUUID(__in NvPhysicalGpuHandle hPhysicalGpu, __inout NV_GPU_UUID *pGpuUuid);
 
 #define NVAPI_NVLINK_COUNTER_MAX_TYPES                    32
 #define NVAPI_NVLINK_MAX_LINKS                            32
@@ -4694,7 +4729,6 @@ NVAPI_INTERFACE NvAPI_GPU_NVLINK_GetCaps(__in NvPhysicalGpuHandle hPhysicalGpu, 
 #define NVAPI_NVLINK_DEVICE_INFO_DEVICE_ID_FLAGS_PCI    (0x00000001)
 #define NVAPI_NVLINK_DEVICE_INFO_DEVICE_ID_FLAGS_UUID   (0x00000002)
 
-
 typedef enum _NVAPI_NVLINK_DEVICE_INFO_DEVICE_TYPE
 {
     NVAPI_NVLINK_DEVICE_INFO_DEVICE_TYPE_EBRIDGE,
@@ -4717,7 +4751,7 @@ typedef struct
     NvU16  function;
     NvU32  pciDeviceId;
     NvU64  deviceType;       //!< GPU Type. See NVAPI_NVLINK_DEVICE_INFO_DEVICE_TYPE_* for possible values.
-    NvU8   deviceUUID[16];   //!< GPU UUID
+    NvU8   deviceUUID[NVAPI_UUID_LEN];   //!< GPU UUID
 }NVLINK_DEVICE_INFO_V1;
 
 typedef enum _NVAPI_NVLINK_STATUS_LINK_STATE
@@ -15674,6 +15708,72 @@ NVAPI_INTERFACE NvAPI_D3D_IsGSyncActive(__in IUnknown *pDeviceOrContext, __in NV
 #endif //if defined(_D3D9_H_) || defined(__d3d10_h__) || defined(__d3d11_h__)
 
 //! \ingroup dx
+
+//! values contained in NV_FLIP_CONFIG::flipConfigFeedback
+typedef enum
+{
+    NVAPI_FLIP_CONFIG_FEEDBACK_OK = 0,
+    NVAPI_FLIP_CONFIG_FEEDBACK_NO_IFLIP = NV_BIT(0),
+    NVAPI_FLIP_CONFIG_FEEDBACK_MIRRORING_DETECTED = NV_BIT(1)
+} NVAPI_FLIP_CONFIG_FEEDBACK_MASK;
+
+//! Maximum number of frames per batch for flip metering
+#define NVAPI_MAX_FRAMES_PER_FLIP_BATCH 8
+
+#if defined(__d3d12_h__)
+typedef struct _NV_FLIP_CONFIG_V1
+{
+    NvU32   version;                //!< [in] Structure version
+    NvU32   nFramesPerBatch;        //!< [in] Number of frames per batch for flip metering (must be <= NVAPI_MAX_FRAMES_PER_FLIP_BATCH), 0 = flip metering disabled
+    NvU32   flipConfigFeedbackMask; //!< [out] Feedback from the driver, a mask of bits from \ref NVAPI_FLIP_CONFIG_FEEDBACK_MASK
+    NvU32   reserved[3];            //!< Reserved, must be 0
+} NV_FLIP_CONFIG_V1;
+
+typedef struct _NV_FLIP_CONFIG_V2
+{
+    NvU32   version;                  //!< [in] Structure version
+    NvU32   nFramesPerBatch;          //!< [in] Number of frames per batch for flip metering (must be <= NVAPI_MAX_FRAMES_PER_FLIP_BATCH), 0 = flip metering disabled
+    NvU32   flipConfigFeedbackMask;   //!< [out] Feedback from the driver, a mask of bits from \ref NVAPI_FLIP_CONFIG_FEEDBACK_MASK
+    NvU32   nPresentedFramesPerBatch; //!< [in] Number of presented frames per batch (always provided to driver, even when flip metering is disabled)
+    NvF32   timePerBatchMs;           //!< [in] Time per batch in milliseconds, <= 0 if unknown
+    NvU32   reserved;                 //!< Reserved, must be 0
+} NV_FLIP_CONFIG_V2;
+
+typedef NV_FLIP_CONFIG_V2     NV_FLIP_CONFIG;
+
+#define NV_FLIP_CONFIG_VER1   MAKE_NVAPI_VERSION(NV_FLIP_CONFIG_V1, 1)
+#define NV_FLIP_CONFIG_VER2   MAKE_NVAPI_VERSION(NV_FLIP_CONFIG_V2, 2)
+#define NV_FLIP_CONFIG_VER    NV_FLIP_CONFIG_VER2
+
+///////////////////////////////////////////////////////////////////////////////
+//!
+//! FUNCTION NAME: NvAPI_D3D12_SetFlipConfig
+//!   DESCRIPTION: This API configures flip metering for frame pacing control. When enabled, the display
+//!                driver will equally space the flips for all frames within a batch, helping to achieve
+//!                smoother frame delivery. The batch size and timing parameters are specified via the
+//!                \ref NV_FLIP_CONFIG structure. This function must be called right before the first
+//!                Present() of each batch of frames.
+//!
+//! \since Release: 570
+//! \param [in]     pCommandQueue    The D3D12 command queue associated with the swap chain
+//! \param [in]     vidpnSrcID       The VidPN source ID for the target display
+//! \param [in,out] pFlipConfig      Pointer to \ref NV_FLIP_CONFIG structure. On return, flipConfigFeedbackMask
+//!                                  contains feedback from the driver.
+//!
+//! SUPPORTED OS:  Windows 10 and higher
+//!
+//!
+//! RETURN STATUS: This API can return any of the error codes enumerated in #NvAPI_Status. 
+//!                If there are return error codes with specific meaning for this API, they are listed below.
+//!
+//! \retval        NVAPI_INVALID_ARGUMENT   nFramesPerBatch exceeds NVAPI_MAX_FRAMES_PER_FLIP_BATCH
+//!
+//! \ingroup dx
+///////////////////////////////////////////////////////////////////////////////
+NVAPI_INTERFACE NvAPI_D3D12_SetFlipConfig(__in IUnknown *pCommandQueue,
+    __in UINT vidpnSrcID, __inout NV_FLIP_CONFIG *pFlipConfig);
+#endif // defined(__d3d12_h__)
+
 //! SUPPORTED OS:  Windows 10 and higher
 //!
 #if defined (__cplusplus) && ( defined(__d3d10_h__) || defined(__d3d10_1_h__) || defined(__d3d11_h__) || defined(__d3d12_h__)) 
@@ -17980,7 +18080,9 @@ typedef struct _NV_GET_SLEEP_STATUS_PARAMS
     NvBool bCplVsyncOn;                                   //!< (OUT) Is Control Panel overriding VSYNC ON?
     NvU32  sleepIntervalUs;                               //!< (OUT) Latest sleep interval in microseconds.
     NvBool bUseGameSleep;                                 //!< (OUT) Is NvAPI_D3D_Sleep() being called?
-    NvU8   rsvd[121];                                     //!< (IN) Reserved. Must be set to 0s.
+    NvBool bFullscreenIFlip;                              //!< (OUT) Is in fullscreen/iFlip mode?
+    NvU8   fgMultiplier;                                  //!< (OUT) Latest Frame Generation multiplier used.
+    NvU8   rsvd[119];                                     //!< (IN) Reserved. Must be set to 0s.
 } NV_GET_SLEEP_STATUS_PARAMS_V1;
 
 typedef NV_GET_SLEEP_STATUS_PARAMS_V1            NV_GET_SLEEP_STATUS_PARAMS;
@@ -18117,7 +18219,8 @@ typedef struct _NV_SET_REFLEX_SYNC_PARAMS
     NvU32  vblankIntervalUs;                              //!< (IN) Interval between VBLANKs in microseconds. (0 means N/A)
     NvS32  timeInQueueUs;                                 //!< (IN) Amount of time in the completed frame queue. Can be negative. (0 means N/A)
     NvU32  timeInQueueUsTarget;                           //!< (IN) Target amount of time in the completed frame queue. (0 means N/A)
-    NvU8   rsvd[28];                                      //!< (IN) Reserved. Must be set to 0s.
+    NvU8   fgMultiplier;                                  //!< (IN) Specify the frame generation multipler to use. (0 means driver should auto-detect)
+    NvU8   rsvd[27];                                      //!< (IN) Reserved. Must be set to 0s.
 } NV_SET_REFLEX_SYNC_PARAMS_V1;
 
 typedef NV_SET_REFLEX_SYNC_PARAMS_V1            NV_SET_REFLEX_SYNC_PARAMS;
@@ -18154,23 +18257,26 @@ typedef struct _NV_LATENCY_RESULT_PARAMS
 {
     NvU32  version;                                       //!< (IN) Structure version
     struct FrameReport {
-        NvU64 frameID;
-        NvU64 inputSampleTime;
-        NvU64 simStartTime;
-        NvU64 simEndTime;
-        NvU64 renderSubmitStartTime;
-        NvU64 renderSubmitEndTime;
-        NvU64 presentStartTime;
-        NvU64 presentEndTime;
-        NvU64 driverStartTime;
-        NvU64 driverEndTime;
-        NvU64 osRenderQueueStartTime;
-        NvU64 osRenderQueueEndTime;
-        NvU64 gpuRenderStartTime;
-        NvU64 gpuRenderEndTime;
+        NvU64 frameID;                                    //!< (OUT)
+        NvU64 inputSampleTime;                            //!< (OUT)
+        NvU64 simStartTime;                               //!< (OUT)
+        NvU64 simEndTime;                                 //!< (OUT)
+        NvU64 renderSubmitStartTime;                      //!< (OUT)
+        NvU64 renderSubmitEndTime;                        //!< (OUT)
+        NvU64 presentStartTime;                           //!< (OUT)
+        NvU64 presentEndTime;                             //!< (OUT)
+        NvU64 driverStartTime;                            //!< (OUT)
+        NvU64 driverEndTime;                              //!< (OUT)
+        NvU64 osRenderQueueStartTime;                     //!< (OUT)
+        NvU64 osRenderQueueEndTime;                       //!< (OUT)
+        NvU64 gpuRenderStartTime;                         //!< (OUT)
+        NvU64 gpuRenderEndTime;                           //!< (OUT)
         NvU32 gpuActiveRenderTimeUs;                      //!< (OUT) Difference between gpuRenderStartTime and gpuRenderEndTime, excluding the idles in between, in microseconds.
         NvU32 gpuFrameTimeUs;                             //!< (OUT) Difference between previous and current frame's gpuRenderEndTime, in microseconds.
-        NvU8  rsvd[120];
+        NvU64 cameraConstructedTime;                      //!< (OUT)
+        NvU32 crossAdapterCopyTimeUs;                     //!< (OUT) Cross adapter copy time in microseconds.
+        NvU32 aiFrameTimeUs;                              //!< (OUT) Frame generation time in microseconds.
+        NvU8  rsvd[104];
     } frameReport[64];
     NvU8  rsvd[32];
 } NV_LATENCY_RESULT_PARAMS_V1;
@@ -21134,6 +21240,7 @@ typedef enum {
     NV_NGX_DLSS_OVERRIDE_FLAG_CREATED           = NV_BIT(9),
     NV_NGX_DLSS_OVERRIDE_FLAG_EVALUATE          = NV_BIT(10),
 
+    NV_NGX_DLSS_OVERRIDE_FLAG_FG_MODE           = NV_BIT(13),
     NV_NGX_DLSS_OVERRIDE_FLAG_SR_DLAA_MODE      = NV_BIT(14),
     NV_NGX_DLSS_OVERRIDE_FLAG_FG_MULTI_FRAME    = NV_BIT(15),
 
@@ -21160,7 +21267,8 @@ typedef struct _NV_NGX_DLSS_OVERRIDE_GET_STATE_PARAMS_V1
     NvU32  renderPreset;            //!< [out] Render Preset for SR/RR
     NvU32  frameGenerationCount;    //!< [out] FG Override Frame Count Target
     NvU32  frameGenerationPreset;   //!< [out] Render Preset for FG
-    NvU32  reserved[3];             //!< Reserved for future use. Must be zero.
+    NvU32  frameGenerationMode;     //!< [out] Frame Generation Mode
+    NvU32  reserved[2];             //!< Reserved for future use. Must be zero.
 } NV_NGX_DLSS_OVERRIDE_GET_STATE_PARAMS_V1;
 
 #define NV_NGX_DLSS_OVERRIDE_GET_STATE_PARAMS_VER1  MAKE_NVAPI_VERSION(NV_NGX_DLSS_OVERRIDE_GET_STATE_PARAMS_V1, 1)
@@ -24378,6 +24486,7 @@ NVAPI_INTERFACE NvAPI_DRS_GetNumProfiles(NvDRSSessionHandle hSession, NvU32 *num
 //! \retval ::NVAPI_OK     SUCCESS
 //! \retval ::NVAPI_ERROR  For miscellaneous errors.
 //!
+//! Note: The recommendation is to provide absolute path of the application in appName field of NVDRS_APPLICATION
 //! \ingroup drsapi
 ///////////////////////////////////////////////////////////////////////////////
 NVAPI_INTERFACE NvAPI_DRS_CreateApplication(NvDRSSessionHandle hSession, NvDRSProfileHandle  hProfile, NVDRS_APPLICATION *pApplication);
@@ -25122,6 +25231,56 @@ typedef NV_LOGICAL_GPUS_V1          NV_LOGICAL_GPUS;
 ///////////////////////////////////////////////////////////////////////////////
 NVAPI_INTERFACE NvAPI_SYS_GetLogicalGPUs(__inout NV_LOGICAL_GPUS *pLogicalGPUs);
 
+
+typedef enum _NV_NGX_DRIVER_FEATURE_ID
+{
+    NV_NGX_DRIVER_FEATURE_ID_SET_FLIP_CONFIG_V2 = 0x343dcf,
+} NV_NGX_DRIVER_FEATURE_ID;
+
+#define NVAPI_MAX_NGX_FEATURES_PER_QUERY 16
+
+typedef struct _NV_NGX_DRIVER_FEATURE_SUPPORT_INFO
+{
+    NV_NGX_DRIVER_FEATURE_ID    featureId;      //!< [IN] Feature ID to query
+    NvU32                       bSupported:1;   //!< [OUT] Feature support (NV_TRUE = supported, NV_FALSE = unsupported)
+    NvU32                       reserved1:31;   //!< Reserved for future use
+    NvU32                       reserved2[2];   //!< Reserved for future use
+} NV_NGX_DRIVER_FEATURE_SUPPORT_INFO;
+
+typedef struct _NV_NGX_GET_DRIVER_FEATURE_SUPPORT_PARAMS_V1
+{
+    NvU32                               version;                                              //!< [IN] Structure version
+    NvU32                               featureCount;                                         //!< [IN] Number of features to query (must be <= NVAPI_MAX_NGX_FEATURES_PER_QUERY)
+    NV_NGX_DRIVER_FEATURE_SUPPORT_INFO  featureSupportInfo[NVAPI_MAX_NGX_FEATURES_PER_QUERY]; //!< [INOUT] Feature query array
+    NvU32                               reserved[6];                                          //!< Reserved for future use
+} NV_NGX_GET_DRIVER_FEATURE_SUPPORT_PARAMS_V1;
+
+typedef NV_NGX_GET_DRIVER_FEATURE_SUPPORT_PARAMS_V1 NV_NGX_GET_DRIVER_FEATURE_SUPPORT_PARAMS;
+
+#define NV_NGX_GET_DRIVER_FEATURE_SUPPORT_PARAMS_VER1  MAKE_NVAPI_VERSION(NV_NGX_GET_DRIVER_FEATURE_SUPPORT_PARAMS_V1,1)
+#define NV_NGX_GET_DRIVER_FEATURE_SUPPORT_PARAMS_VER   NV_NGX_GET_DRIVER_FEATURE_SUPPORT_PARAMS_VER1
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// FUNCTION NAME: NvAPI_NGX_GetDriverFeatureSupport
+//
+//! DESCRIPTION: Query driver support for NGX features.
+//!              Returns a boolean support status for each queried feature. 
+//!              NV_TRUE indicates the feature is supported, NV_FALSE indicates 
+//!              the feature is unsupported.
+//!
+//! SUPPORTED OS:  Windows 10 and higher
+//!
+//!
+//! \since Release: 595
+//!
+//! \param [inout]  pParams   Pointer to NV_NGX_GET_DRIVER_FEATURE_SUPPORT_PARAMS structure
+//!
+//! \return  This API can return any of the error codes enumerated in #NvAPI_Status.
+//!
+//! \ingroup sysgeneral
+///////////////////////////////////////////////////////////////////////////////
+NVAPI_INTERFACE NvAPI_NGX_GetDriverFeatureSupport(__inout NV_NGX_GET_DRIVER_FEATURE_SUPPORT_PARAMS* pParams);
 
 /*!
  * Callback settings common to all client callbacks.

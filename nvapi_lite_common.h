@@ -1,6 +1,6 @@
 /*********************************************************************************************************\
 |*                                                                                                        *|
-|* SPDX-FileCopyrightText: Copyright (c) 2019-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.  *|
+|* SPDX-FileCopyrightText: Copyright (c) 2019-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.  *|
 |* SPDX-License-Identifier: MIT                                                                           *|
 |*                                                                                                        *|
 |* Permission is hereby granted, free of charge, to any person obtaining a                                *|
@@ -111,7 +111,7 @@ typedef double           NvF64;
  */
 #define NvF32TONvU32(_pData) *(NvU32 *)(_pData)
 
-#define NVAPI_SDK_VERSION 59145
+#define NVAPI_SDK_VERSION 59596
 /* Boolean type */
 typedef NvU8 NvBool;
 #define NV_TRUE           ((NvBool)(0 == 0))
@@ -219,6 +219,8 @@ typedef struct
 
 #define NVAPI_SYSTEM_MAX_HWBCS              128
 #define NVAPI_SYSTEM_HWBC_INVALID_ID        0xffffffff
+
+#define NVAPI_UUID_LEN                      16 
 
 #define NVAPI_SYSTEM_MAX_DISPLAYS           NVAPI_MAX_PHYSICAL_GPUS * NV_MAX_HEADS
 #define NV_MAX_HEADS                        4   //!< Maximum heads, each with NVAPI_DESKTOP_RES resolution

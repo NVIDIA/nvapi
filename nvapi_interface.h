@@ -1,6 +1,6 @@
 /*********************************************************************************************************\
 |*                                                                                                        *|
-|* SPDX-FileCopyrightText: Copyright (c) 2019-2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.  *|
+|* SPDX-FileCopyrightText: Copyright (c) 2019-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.  *|
 |* SPDX-License-Identifier: MIT                                                                           *|
 |*                                                                                                        *|
 |* Permission is hereby granted, free of charge, to any person obtaining a                                *|
@@ -118,6 +118,7 @@ struct NVAPI_INTERFACE_TABLE nvapi_interface_table[] =
     { "NvAPI_GPU_GetGPUInfo", 0xafd1b02c },
     { "NvAPI_GPU_GetVRReadyData", 0x81d629c5 },
     { "NvAPI_GPU_GetGspFeatures", 0x581c4391 },
+    { "NvAPI_GPU_GetUUID", 0xdc95673d },
     { "NvAPI_GPU_NVLINK_GetCaps", 0xbef1119d },
     { "NvAPI_GPU_NVLINK_GetStatus", 0xc72a38e3 },
     { "NvAPI_GPU_GetPerfDecreaseInfo", 0x7f7f4600 },
@@ -318,6 +319,7 @@ struct NVAPI_INTERFACE_TABLE nvapi_interface_table[] =
     { "NvAPI_D3D12_GetOptimalThreadCountForMesh", 0xb43995cb },
     { "NvAPI_D3D_IsGSyncCapable", 0x9c1eed78 },
     { "NvAPI_D3D_IsGSyncActive", 0xe942b0ff },
+    { "NvAPI_D3D12_SetFlipConfig", 0xf3148c42 },
     { "NvAPI_D3D1x_DisableShaderDiskCache", 0xd0cbca7d },
     { "NvAPI_D3D11_MultiGPU_GetCaps", 0xd2d25687 },
     { "NvAPI_D3D11_MultiGPU_Init", 0x017be49e },
@@ -538,6 +540,7 @@ struct NVAPI_INTERFACE_TABLE nvapi_interface_table[] =
     { "NvAPI_SYS_GetDisplayDriverInfo", 0x721faceb },
     { "NvAPI_SYS_GetPhysicalGPUs", 0xd3b24d2d },
     { "NvAPI_SYS_GetLogicalGPUs", 0xccfffc10 },
+    { "NvAPI_NGX_GetDriverFeatureSupport", 0x6194b19d },
     { "NvAPI_GPU_ClientRegisterForUtilizationSampleUpdates", 0xadeeaf67 },
     { "NvAPI_RegisterRiseCallback", 0x9cfe8f94 },
     { "NvAPI_RequestRise", 0x5047de98 },
