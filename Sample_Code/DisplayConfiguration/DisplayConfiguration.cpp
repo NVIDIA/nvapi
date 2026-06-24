@@ -90,10 +90,7 @@ NvAPI_Status AllocateAndGetDisplayConfig(NvU32* pathInfoCount, NV_DISPLAYCONFIG_
 
     // Retrieve the targetInfo counts
     ret = NvAPI_DISP_GetDisplayConfig(&pathCount, pathInfo);
-    if (ret != NVAPI_OK)
-    {
-        return ret;
-    }
+    if (ret != NVAPI_OK) goto cleanup;
 
     for (NvU32 i = 0; i < pathCount; i++)
     {
@@ -105,29 +102,24 @@ NvAPI_Status AllocateAndGetDisplayConfig(NvU32* pathInfoCount, NV_DISPLAYCONFIG_
         }
         else
         {
-
 #ifdef NV_DISPLAYCONFIG_PATH_INFO_VER3
 pathInfo[i].sourceModeInfo = (NV_DISPLAYCONFIG_SOURCE_MODE_INFO*) malloc(pathInfo[i].sourceModeInfoCount * sizeof(NV_DISPLAYCONFIG_SOURCE_MODE_INFO));
 #endif
+        }
+        if (pathInfo[i].sourceModeInfo == NULL) { ret = NVAPI_OUT_OF_MEMORY; goto cleanup; }
 
-        }
-        if (pathInfo[i].sourceModeInfo == NULL)
-        {
-            return NVAPI_OUT_OF_MEMORY;
-        }
         memset(pathInfo[i].sourceModeInfo, 0, sizeof(NV_DISPLAYCONFIG_SOURCE_MODE_INFO));
 
         // Allocate the target array
         pathInfo[i].targetInfo = (NV_DISPLAYCONFIG_PATH_TARGET_INFO*) malloc(pathInfo[i].targetInfoCount * sizeof(NV_DISPLAYCONFIG_PATH_TARGET_INFO));
-        if (pathInfo[i].targetInfo == NULL)
-        {
-            return NVAPI_OUT_OF_MEMORY;
-        }
+        if (pathInfo[i].targetInfo == NULL) { ret = NVAPI_OUT_OF_MEMORY; goto cleanup; }
+
         // Allocate the target details
         memset(pathInfo[i].targetInfo, 0, pathInfo[i].targetInfoCount * sizeof(NV_DISPLAYCONFIG_PATH_TARGET_INFO));
         for (NvU32 j = 0 ; j < pathInfo[i].targetInfoCount ; j++)
         {
             pathInfo[i].targetInfo[j].details = (NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO*) malloc(sizeof(NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO));    
+            if (pathInfo[i].targetInfo[j].details == NULL) { ret = NVAPI_OUT_OF_MEMORY; goto cleanup; }
             memset(pathInfo[i].targetInfo[j].details, 0, sizeof(NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO));
             pathInfo[i].targetInfo[j].details->version = NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO_VER;
         }
@@ -135,14 +127,28 @@ pathInfo[i].sourceModeInfo = (NV_DISPLAYCONFIG_SOURCE_MODE_INFO*) malloc(pathInf
 
     // Retrieve the full path info
     ret = NvAPI_DISP_GetDisplayConfig(&pathCount, pathInfo);
-    if (ret != NVAPI_OK)    
-    {
-        return ret;
-    }
+    if (ret != NVAPI_OK) goto cleanup;
 
     *pathInfoCount = pathCount;
     *pPathInfo = pathInfo;
     return NVAPI_OK;
+
+cleanup:
+    if (pathInfo)
+    {
+        for (NvU32 i = 0; i < pathCount; i++)
+        {
+            if (pathInfo[i].targetInfo)
+            {
+                for (NvU32 j = 0; j < pathInfo[i].targetInfoCount; j++)
+                    free(pathInfo[i].targetInfo[j].details);
+                free(pathInfo[i].targetInfo);
+            }
+            free(pathInfo[i].sourceModeInfo);
+        }
+        free(pathInfo);
+    }
+    return ret;
 }
 
 // This function is used to display the current GPU configuration and the connected displays
@@ -181,6 +187,9 @@ void ShowCurrentDisplayConfig(void)
 
 	for(NvU32 GpuIndex = 0; GpuIndex < physicalGpuCount; GpuIndex++)
 	{
+		NvU32 nDisplayIds						= 0;
+		NV_GPU_DISPLAYIDS* pDisplayIds			= NULL;
+
 		ret = NvAPI_GPU_GetConnectedDisplayIds(hPhysicalGpu[GpuIndex], pDisplayIds, &nDisplayIds, 0);
 		if((ret == NVAPI_OK) && nDisplayIds)
 		{
@@ -189,7 +198,10 @@ void ShowCurrentDisplayConfig(void)
 			if (pDisplayIds)
 			{
 				memset(pDisplayIds, 0, nDisplayIds * sizeof(NV_GPU_DISPLAYIDS));
-				pDisplayIds[GpuIndex].version		= NV_GPU_DISPLAYIDS_VER;
+				for (NvU32 j = 0; j < nDisplayIds; j++)
+				{
+					pDisplayIds[j].version = NV_GPU_DISPLAYIDS_VER;
+				}
 				ret = NvAPI_GPU_GetConnectedDisplayIds(hPhysicalGpu[DisplayGpuIndex], pDisplayIds, &nDisplayIds, 0);
 				for(NvU32 DisplayIdIndex = 0; DisplayIdIndex < nDisplayIds; DisplayIdIndex++)
 				{
@@ -197,6 +209,7 @@ void ShowCurrentDisplayConfig(void)
 					if(!pDisplayIds[DisplayIdIndex].displayId)printf("(NONE)");
 					printf("\n");
 				}
+				free(pDisplayIds);
 			}
 		}
 		else
@@ -257,7 +270,6 @@ NvAPI_Status SetMode(void)
        return ret;
 
     NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO *details = NULL;
-    details = (NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO*)malloc(sizeof(NV_DISPLAYCONFIG_PATH_ADVANCED_TARGET_INFO));
 
     if( pathCount == 1 )
     {
@@ -292,7 +304,7 @@ NvAPI_Status SetMode(void)
             memset(primary, 0, pathInfo[0].targetInfoCount * sizeof(NV_DISPLAYCONFIG_PATH_TARGET_INFO));
             primary->displayId								= pathInfo[0].targetInfo[0].displayId;
 		    printf(".");
-            delete pathInfo[0].targetInfo;
+            free(pathInfo[0].targetInfo);
             pathInfo[0].targetInfo							= primary;
             pathInfo[0].targetInfo[1].displayId				= DisplayID;
 		    pathInfo[0].sourceModeInfo[0].bGDIPrimary		= 1;	// Decide the primary display
@@ -312,8 +324,7 @@ NvAPI_Status SetMode(void)
                 primary->displayId = DisplayID;
                 primary->details = details;
                 primary--;
-                delete pathInfo[0].targetInfo;
-                pathInfo[0].targetInfo							= (NV_DISPLAYCONFIG_PATH_TARGET_INFO*) malloc(2 * sizeof(NV_DISPLAYCONFIG_PATH_TARGET_INFO));
+                free(pathInfo[0].targetInfo);
                 pathInfo[0].targetInfo = primary;
             }
             pathInfo[0].sourceModeInfo[0].bGDIPrimary       = 1;// Decide the primary display

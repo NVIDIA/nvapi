@@ -64,7 +64,8 @@ int main()
     //
     NvDisplayHandle hDisplay_a[NVAPI_MAX_PHYSICAL_GPUS * NVAPI_MAX_DISPLAY_HEADS] = {0};
     NvU32 nvDisplayCount = 0;
-    for (unsigned int i = 0; nvapiStatus == NVAPI_OK; i++)
+    const unsigned int kMax = sizeof(hDisplay_a)/sizeof(hDisplay_a[0]);
+    for (unsigned int i = 0; nvapiStatus == NVAPI_OK && i < kMax; i++)
     {
         nvapiStatus = NvAPI_EnumNvidiaDisplayHandle(i, &hDisplay_a[i]);
 
@@ -112,9 +113,9 @@ int main()
     for (unsigned int i = 0; i < nvDisplayCount; i++)
     {
         // Get GPU id assiciated with display ID
-        NvPhysicalGpuHandle hGpu = NULL;
+        NvPhysicalGpuHandle hGpu[NVAPI_MAX_PHYSICAL_GPUS] = {0};
 		NvU32 pGpuCount=0;
-        nvapiStatus = NvAPI_GetPhysicalGPUsFromDisplay(hDisplay_a[i], &hGpu, &pGpuCount);
+        nvapiStatus = NvAPI_GetPhysicalGPUsFromDisplay(hDisplay_a[i], hGpu, &pGpuCount);
         if (nvapiStatus != NVAPI_OK)
         {
             printf("NvAPI_GetPhysicalGPUFromDisplay() failed with status %d\n", nvapiStatus);
@@ -135,12 +136,12 @@ int main()
         printf
             (
                 "Testing GPU handle=%08p, Output ID=%d, Display no=%d, Display handle=%08p...\n", 
-                hGpu, outputID, i, hDisplay_a[i]
+                hGpu[0], outputID, i, hDisplay_a[i]
             );
 
         printf( "- Regular I2C read operation test mode\n" );
 
-        BOOL result = CheckForDDCCICompliance(hGpu, outputID);
+        BOOL result = CheckForDDCCICompliance(hGpu[0], outputID);
         if (!result)
         {
             printf("  The display 0x%X is not DDC/CI capable so skipping the test \n \n", outputID);
@@ -148,7 +149,7 @@ int main()
             return FALSE;
         }
         
-        result = ReadAndChangeBrightness(hGpu, outputID, TRUE);
+        result = ReadAndChangeBrightness(hGpu[0], outputID, TRUE);
         if (!result)
         {
             printf("...test FAILED!\n");
@@ -157,7 +158,7 @@ int main()
         printf("\n");
 
         printf( "- Barco DDC test I2C read operation test mode\n" );
-        result = ReadAndChangeBrightness(hGpu, outputID, FALSE);
+        result = ReadAndChangeBrightness(hGpu[0], outputID, FALSE);
         if (!result)
         {
             printf("...test FAILED!\n");
@@ -176,6 +177,9 @@ int main()
 // This function calculates the (XOR) checksum of the I2C register
 void CalculateI2cChecksum(const NV_I2C_INFO &i2cInfo)
 {
+    // early guard against invalid size
+    if (i2cInfo.cbSize == 0) return;
+
     // Calculate the i2c packet checksum and place the 
     // value into the packet
 

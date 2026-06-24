@@ -25,7 +25,7 @@
 \*********************************************************************************************************/
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
-// Date: Mar 17, 2026 
+// Date: Jun 1, 2026 
 // File: nvapi.h
 //
 // NvAPI provides an interface to NVIDIA devices. This file contains the 
@@ -4641,6 +4641,15 @@ NVAPI_INTERFACE NvAPI_GPU_GetUUID(__in NvPhysicalGpuHandle hPhysicalGpu, __inout
 #define NVAPI_NVLINK_COUNTER_MAX_TYPES                    32
 #define NVAPI_NVLINK_MAX_LINKS                            32
 
+#define NVAPI_NVLINK_MAX_LINKS_V2                     128
+
+typedef struct _NVAPI_NVLINK_LINK_MASK_V1
+{
+    NvU32 lenMasks;                                        //!< [IN/OUT]  For Get APIs:This value indicates the number of array elements that clients should read.
+                                                           //!            For Set APIs:Clients must specify the length of the masks array by providing this value.
+    NvU64 masks[NVAPI_NVLINK_MAX_LINKS_V2];
+} NVAPI_NVLINK_LINK_MASK_V1;
+
 //! \ingroup nvlink
 //! @{
 //! Used in NvAPI_GPU_NVLINK_GetCaps()
@@ -4720,6 +4729,47 @@ typedef NVLINK_GET_CAPS_V1 NVLINK_GET_CAPS;
 //! \ingroup   nvlink
 ///////////////////////////////////////////////////////////////////////////////
 NVAPI_INTERFACE NvAPI_GPU_NVLINK_GetCaps(__in NvPhysicalGpuHandle hPhysicalGpu, __inout NVLINK_GET_CAPS *capsParams);
+
+typedef struct _NVLINK_GET_CAPS_EX_V1
+{
+    NvU32   version;                         //!< [IN] Version of this structure. Must always be first element in this structure.
+    NvU32   capsTbl;                         //!< [OUT] This bit field is used for getting global caps.The individual bitfields are specified by NVAPI_NVLINK_CAPS_*
+    NvU8    lowestNvlinkVersion;             //!< [OUT] This field specifies the lowest supported NVLink version for this GPU.
+    NvU8    highestNvlinkVersion;            //!< [OUT] This field specifies the highest supported NVLink version for this GPU.
+    NvU8    lowestNciVersion;                //!< [OUT] This field specifies the lowest supported NCI version for this GPU.
+    NvU8    highestNciVersion;               //!< [OUT] This field specifies the highest supported NCI version for this GPU.
+    NVAPI_NVLINK_LINK_MASK_V1 links;         //!< [OUT] Returns the mask of links enabled
+    NvU32   reserved[2];                     //!< [OUT] Reserved for future.
+} NVLINK_GET_CAPS_EX_V1;
+
+typedef NVLINK_GET_CAPS_EX_V1 NVLINK_GET_CAPS_EX;
+#define NVLINK_GET_CAPS_EX_VER1 MAKE_NVAPI_VERSION(NVLINK_GET_CAPS_EX_V1, 1)
+
+#define NVLINK_GET_CAPS_EX_VER NVLINK_GET_CAPS_EX_VER1
+//! @}
+///////////////////////////////////////////////////////////////////////////////
+//
+// FUNCTION NAME:    NvAPI_GPU_NVLINK_GetCapsEx
+//
+//! DESCRIPTION:     This function returns the NVLink capabilities supported by the GPU.
+//! SUPPORTED OS:  Windows 10 and higher
+//!
+//!
+//! \since Release: 590
+//!
+//! \param [in]         hPhysicalGpu                                       GPU selection.
+//! \param [in,out]     NVLINK_GET_CAPS_EX                                 This structure contains the output parameters.
+//!                                                                         Also need to specify the version.
+//!//!
+//! \return  This API can return any of the error codes enumerated in
+//!          #NvAPI_Status.  If there are return error codes with specific
+//!          meaning for this API, they are listed below.
+//! \retval ::NVAPI_INVALID_USER_PRIVILEGE       - The caller does not have administrative privileges
+//!
+//! \ingroup   nvlink
+///////////////////////////////////////////////////////////////////////////////
+NVAPI_INTERFACE NvAPI_GPU_NVLINK_GetCapsEx(__in NvPhysicalGpuHandle hPhysicalGpu, __inout NVLINK_GET_CAPS_EX *pCapsEx);
+
 
 //! \ingroup nvlink
 //! @{
@@ -4925,6 +4975,43 @@ typedef NVLINK_GET_STATUS_V2   NVLINK_GET_STATUS;
 //! \ingroup   nvlink
 ///////////////////////////////////////////////////////////////////////////////
 NVAPI_INTERFACE NvAPI_GPU_NVLINK_GetStatus(__in NvPhysicalGpuHandle hPhysicalGpu, __inout NVLINK_GET_STATUS* statusParams);
+
+typedef struct _NVLINK_GET_STATUS_EX_V1
+{
+    NvU32 version;                                                        //!< [IN] Version of this structure.  Must always be first element in this structure.
+    NVAPI_NVLINK_LINK_MASK_V1 links;                                      //!< [OUT] This parameter specifies the active links.
+    NVLINK_LINK_STATUS_INFO_V2 linkInfo[NVAPI_NVLINK_MAX_LINKS_V2];       //!< [OUT] This structure stores the per-link status of different NVLink parameters. The link is identified by the index.
+} NVLINK_GET_STATUS_EX_V1;
+
+typedef NVLINK_GET_STATUS_EX_V1     NVLINK_GET_STATUS_EX;
+#define NVLINK_GET_STATUS_EX_VER1   MAKE_NVAPI_VERSION(NVLINK_GET_STATUS_EX_V1, 1)
+
+#define NVLINK_GET_STATUS_EX_VER NVLINK_GET_STATUS_EX_VER1
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// FUNCTION NAME:    NvAPI_GPU_NVLINK_GetStatusEx
+//
+//! DESCRIPTION:     This function returns the NVLink status details like capabilities, link version, device information and l1 thresholds etc.
+//! SUPPORTED OS:  Windows 10 and higher
+//!
+//!
+//!
+//! \since Release: 590
+//! \param [in]         hPhysicalGpu                            GPU selection
+//! \param [in,out]     pStatusEx                               This structure contains the output parameters.
+//!                                                             The caller must specify the version.
+//!
+//!
+//! \return  This API can return any of the error codes enumerated in
+//!          #NvAPI_Status.  If there are return error codes with specific meaning for this API, they are listed below.
+//! \retval ::NVAPI_INVALID_USER_PRIVILEGE       - The caller does not have administrative privileges
+//!
+//! \ingroup   nvlink
+///////////////////////////////////////////////////////////////////////////////
+NVAPI_INTERFACE NvAPI_GPU_NVLINK_GetStatusEx(__in NvPhysicalGpuHandle hPhysicalGpu, __inout NVLINK_GET_STATUS_EX* pStatusEx);
+
+
 
 //! Used in NvAPI_GPU_GetPerfDecreaseInfo.
 //! Bit masks for knowing the exact reason for performance decrease
@@ -5445,6 +5532,75 @@ typedef NV_GPU_CLOCK_FREQUENCIES_V2 NV_GPU_CLOCK_FREQUENCIES;
 //! \ingroup gpuclock
 ///////////////////////////////////////////////////////////////////////////////
 NVAPI_INTERFACE NvAPI_GPU_GetAllClockFrequencies(__in NvPhysicalGpuHandle hPhysicalGPU, __inout NV_GPU_CLOCK_FREQUENCIES *pClkFreqs);
+
+
+
+//! \addtogroup gpuclock
+//! @{
+
+/*!
+ * Structure representing the overclock detection status of a GPU.
+ */
+typedef struct _NV_GPU_OVERCLOCK_STATUS_V1
+{
+    /*!
+     * Version of NV_GPU_OVERCLOCK_STATUS structure. Must always
+     * be first element in this structure.
+     */
+    NvU32 version;
+    /*!
+     * Boolean indicating if any overclocking has been performed by the user.
+     */
+    NvU32 bOverclockingDetected:1;
+    NvU32 reserved:31;
+    /*!
+     * Reserved for future use.
+     */          
+    NvU32 rsvd[16];
+} NV_GPU_OVERCLOCK_STATUS_V1,
+*PNV_GPU_OVERCLOCK_STATUS_V1;
+
+typedef NV_GPU_OVERCLOCK_STATUS_V1 NV_GPU_OVERCLOCK_STATUS, *PNV_GPU_OVERCLOCK_STATUS;
+
+//! Macro for constructing the version field of NV_GPU_OVERCLOCK_STATUS_V1
+#define NV_GPU_OVERCLOCK_STATUS_VER1  MAKE_NVAPI_VERSION(NV_GPU_OVERCLOCK_STATUS_V1,1)
+
+//! Macro to alias to latest version
+#define NV_GPU_OVERCLOCK_STATUS_VER NV_GPU_OVERCLOCK_STATUS_VER1
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// FUNCTION NAME:    NvAPI_GPU_GetOverclockStatus()
+//
+//! DESCRIPTION: This API retrieves information about whether the GPU has any
+//!              overclocking. 
+//!
+//!              This API is intended for game developers who want to detect if the GPU
+//!              is running a non-default clocking configuration, which may affect
+//!              overall workload stability.
+//!
+//! SUPPORTED OS:  Windows 10 and higher
+//!
+//!
+//! TCC_SUPPORTED
+//!
+//! MCDM_SUPPORTED
+//!
+//! \since Release: 595
+//!
+//! \param [in]      hPhysicalGpu      Physical GPU handle
+//! \param [inout]   pOverclockStatus  Pointer to NV_GPU_OVERCLOCK_STATUS structure
+//!                                    that receives the overclock detection status.
+//!
+//! \return  This API can return any of the error codes enumerated in
+//!          #NvAPI_Status.  If there are return error codes with specific
+//!          meaning for this API, they are listed below.
+//!
+//! \ingroup   gpuclock
+///////////////////////////////////////////////////////////////////////////////
+NVAPI_INTERFACE NvAPI_GPU_GetOverclockStatus(__in NvPhysicalGpuHandle hPhysicalGpu, __inout PNV_GPU_OVERCLOCK_STATUS pOverclockStatus);
+
+//! @}
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -10731,19 +10887,34 @@ typedef struct _NV_GSYNC_GPU
     NvU32                               reserved : 31;      //!< Should be set to ZERO
 } NV_GSYNC_GPU;
 
-typedef struct _NV_GSYNC_DISPLAY
+#define NV_GSYNC_GPU_VER      MAKE_NVAPI_VERSION(NV_GSYNC_GPU,1)
+
+typedef struct _NV_GSYNC_DISPLAY_V1
 {
     NvU32                               version;            //!< Version of the structure
-    NvU32                               displayId;          //!< display identifier for displays.The GPU to which it is connected, can be retireved from NvAPI_SYS_GetPhysicalGpuFromDisplayId
+    NvU32                               displayId;          //!< display identifier for displays.The GPU to which it is connected, can be retrieved from NvAPI_SYS_GetPhysicalGpuFromDisplayId
     NvU32                               isMasterable : 1;   //!< Can this display be the master? (Read only)
     NvU32                               reserved : 31;      //!< Should be set to ZERO
     NVAPI_GSYNC_DISPLAY_SYNC_STATE      syncState;          //!< Is this display slave/master
                                                             //!< (Retrieved with topology or set by caller for enable/disable sync)
-} NV_GSYNC_DISPLAY;
+} NV_GSYNC_DISPLAY_V1;
 
-#define NV_GSYNC_DISPLAY_VER  MAKE_NVAPI_VERSION(NV_GSYNC_DISPLAY,1)
-#define NV_GSYNC_GPU_VER      MAKE_NVAPI_VERSION(NV_GSYNC_GPU,1)
+typedef struct _NV_GSYNC_DISPLAY_V2
+{
+    NvU32                               version;            //!< Version of the structure
+    NvU32                               displayId;          //!< display identifier for displays.The GPU to which it is connected, can be retrieved from NvAPI_SYS_GetPhysicalGpuFromDisplayId
+    NvU32                               isMasterable : 1;   //!< Can this display be the master? (Read only)
+    NvU32                               useExactTiming : 1; //!< The exact timing details provided should be used
+    NvU32                               reserved : 30;      //!< Should be set to ZERO
+    NVAPI_GSYNC_DISPLAY_SYNC_STATE      syncState;          //!< Is this display slave/master
+                                                            //!< (Retrieved with topology or set by caller for enable/disable sync)
+    NvU32 reserved2[20];
+} NV_GSYNC_DISPLAY_V2;
 
+#define NV_GSYNC_DISPLAY_VER1  MAKE_NVAPI_VERSION(NV_GSYNC_DISPLAY_V1,1)
+#define NV_GSYNC_DISPLAY_VER2  MAKE_NVAPI_VERSION(NV_GSYNC_DISPLAY_V2,2)
+typedef NV_GSYNC_DISPLAY_V2    NV_GSYNC_DISPLAY;
+#define NV_GSYNC_DISPLAY_VER   NV_GSYNC_DISPLAY_VER2
 
 ///////////////////////////////////////////////////////////////////////////////
 //
@@ -10811,7 +10982,7 @@ NVAPI_INTERFACE NvAPI_GSync_GetTopology(__in NvGSyncDeviceHandle hNvGSyncDevice,
 //!
 //! \ingroup gsyncapi
 ///////////////////////////////////////////////////////////////////////////////
-NVAPI_INTERFACE NvAPI_GSync_SetSyncStateSettings(__in NvU32 gsyncDisplayCount, __in_ecount(gsyncDisplayCount) NV_GSYNC_DISPLAY *pGsyncDisplays, __in NvU32 flags);
+NVAPI_INTERFACE NvAPI_GSync_SetSyncStateSettings(__in NvU32 gsyncDisplayCount, __inout_ecount(gsyncDisplayCount) NV_GSYNC_DISPLAY *pGsyncDisplays, __in NvU32 flags);
 
 
 //! \ingroup gsyncapi
@@ -15720,7 +15891,7 @@ typedef enum
 //! Maximum number of frames per batch for flip metering
 #define NVAPI_MAX_FRAMES_PER_FLIP_BATCH 8
 
-#if defined(__d3d12_h__)
+#if defined(__d3d12_h__) || defined(__d3d10_h__) || defined(__d3d10_1_h__) || defined(__d3d11_h__)
 typedef struct _NV_FLIP_CONFIG_V1
 {
     NvU32   version;                //!< [in] Structure version
@@ -15744,7 +15915,9 @@ typedef NV_FLIP_CONFIG_V2     NV_FLIP_CONFIG;
 #define NV_FLIP_CONFIG_VER1   MAKE_NVAPI_VERSION(NV_FLIP_CONFIG_V1, 1)
 #define NV_FLIP_CONFIG_VER2   MAKE_NVAPI_VERSION(NV_FLIP_CONFIG_V2, 2)
 #define NV_FLIP_CONFIG_VER    NV_FLIP_CONFIG_VER2
+#endif // defined(__d3d12_h__) || defined(__d3d10_h__) || defined(__d3d10_1_h__) || defined(__d3d11_h__)
 
+#if defined(__d3d12_h__)
 ///////////////////////////////////////////////////////////////////////////////
 //!
 //! FUNCTION NAME: NvAPI_D3D12_SetFlipConfig
@@ -20349,6 +20522,9 @@ typedef enum _NVAPI_RAY_FLAGS_EX
     NVAPI_RAY_FLAG_CULL_OPAQUE_EX                     = NV_BIT( 6), //!< Never intersect geometries that were flagged as opaque.
     NVAPI_RAY_FLAG_CULL_NON_OPAQUE_EX                 = NV_BIT( 7), //!< Never intersect geometries that were not flagged as opaque.
     NVAPI_RAY_FLAG_SKIP_TRIANGLES_EX                  = NV_BIT( 8), //!< Never intersect triangle geometries.
+                                                                    //!< Going forward, SKIP_BUILTIN_PRIMITIVES should be used instead of SKIP_TRIANGLES.
+    NVAPI_RAY_FLAG_SKIP_BUILTIN_PRIMITIVES_EX         = NV_BIT( 8), //!< Never intersect any built-in primitive geometries (triangles, spheres, linear swept spheres).
+                                                                    //!< This is aliased with SKIP_TRIANGLES and is intended as a replacement.
     NVAPI_RAY_FLAG_SKIP_PROCEDURAL_PRIMITIVES_EX      = NV_BIT( 9), //!< Never intersect AABB geometries.
 
     // NVAPI_RAY_FLAGS_EX specific flags
@@ -23989,7 +24165,8 @@ typedef enum _NVDRS_SETTING_TYPE
      NVDRS_DWORD_TYPE,
      NVDRS_BINARY_TYPE,
      NVDRS_STRING_TYPE,
-     NVDRS_WSTRING_TYPE
+     NVDRS_WSTRING_TYPE,
+     NVDRS_QWORD_TYPE
 } NVDRS_SETTING_TYPE;
 
 typedef enum _NVDRS_SETTING_LOCATION
@@ -24044,29 +24221,34 @@ typedef struct _NVDRS_BINARY_SETTING
      NvU8                 valueData[NVAPI_BINARY_DATA_MAX];
 } NVDRS_BINARY_SETTING;
 
+#pragma pack(push, 4)
 typedef struct _NVDRS_SETTING_VALUES
 {
      NvU32                      version;                //!< Structure Version
      NvU32                      numSettingValues;       //!< Total number of values available in a setting.
      NVDRS_SETTING_TYPE         settingType;            //!< Type of setting value.  
-     union                                              //!< Setting can hold either DWORD or Binary value or string. Not mixed types.
+     union                                              //!< Setting can hold either DWORD or Binary value or string or QWORD. Not mixed types.
      {
          NvU32                      u32DefaultValue;    //!< Accessing default DWORD value of this setting.
          NVDRS_BINARY_SETTING       binaryDefaultValue; //!< Accessing default Binary value of this setting.
                                                         //!< Must be allocated by caller with valueLength specifying buffer size, or only valueLength will be filled in.
          NvAPI_UnicodeString        wszDefaultValue;    //!< Accessing default unicode string value of this setting.
+         NvU64                      u64DefaultValue;    //!< Accessing default QWORD value of this setting.
      };
-     union                                                //!< Setting values can be of either DWORD, Binary values or String type,
+     union                                                //!< Setting values can be of either DWORD, Binary values, String or QWORD type,
      {                                                    //!< NOT mixed types.
          NvU32                      u32Value;           //!< All possible DWORD values for a setting
          NVDRS_BINARY_SETTING       binaryValue;        //!< All possible Binary values for a setting
          NvAPI_UnicodeString        wszValue;           //!< Accessing current unicode string value of this setting.
+         NvU64                      u64Value;           //!< All possible QWORD values for a setting
      }settingValues[NVAPI_SETTING_MAX_VALUES];
 } NVDRS_SETTING_VALUES;
+#pragma pack(pop)
 
 //! Macro for constructing the version field of ::_NVDRS_SETTING_VALUES
 #define NVDRS_SETTING_VALUES_VER    MAKE_NVAPI_VERSION(NVDRS_SETTING_VALUES,1)
      
+#pragma pack(push, 4)
 typedef struct _NVDRS_SETTING_V1
 {
      NvU32                      version;                //!< Structure Version
@@ -24077,23 +24259,26 @@ typedef struct _NVDRS_SETTING_V1
      NvU32                      isCurrentPredefined;    //!< It is different than 0 if the currentValue is a predefined Value, 
                                                         //!< 0 if the currentValue is a user value. 
      NvU32                      isPredefinedValid;      //!< It is different than 0 if the PredefinedValue union contains a valid value. 
-     union                                              //!< Setting can hold either DWORD or Binary value or string. Not mixed types.
+     union                                              //!< Setting can hold either DWORD or Binary value or string or QWORD. Not mixed types.
      {
          NvU32                      u32PredefinedValue;    //!< Accessing default DWORD value of this setting.
          NVDRS_BINARY_SETTING       binaryPredefinedValue; //!< Accessing default Binary value of this setting.
                                                            //!< Must be allocated by caller with valueLength specifying buffer size, 
                                                            //!< or only valueLength will be filled in.
          NvAPI_UnicodeString        wszPredefinedValue;    //!< Accessing default unicode string value of this setting.
+         NvU64                      u64PredefinedValue;    //!< Accessing default QWORD value of this setting.
      };
-     union                                              //!< Setting can hold either DWORD or Binary value or string. Not mixed types.
+     union                                              //!< Setting can hold either DWORD or Binary value or string or QWORD. Not mixed types.
      {
          NvU32                      u32CurrentValue;    //!< Accessing current DWORD value of this setting.
          NVDRS_BINARY_SETTING       binaryCurrentValue; //!< Accessing current Binary value of this setting.
                                                         //!< Must be allocated by caller with valueLength specifying buffer size, 
                                                         //!< or only valueLength will be filled in.
          NvAPI_UnicodeString        wszCurrentValue;    //!< Accessing current unicode string value of this setting.
+         NvU64                      u64CurrentValue;    //!< Accessing current QWORD value of this setting.
      };                                                 
 } NVDRS_SETTING_V1;
+#pragma pack(pop)
 
 //! Macro for constructing the version field of ::_NVDRS_SETTING
 #define NVDRS_SETTING_VER1        MAKE_NVAPI_VERSION(NVDRS_SETTING_V1, 1)
@@ -24877,7 +25062,7 @@ typedef struct
     NvAPI_ShortString   szChipsetName;      //!< Chipset device Name
     NvU32               flags;              //!< Chipset info flags - obsolete
     NvU32               subSysVendorId;     //!< Chipset subsystem vendor identification
-    NvU32               subSysDeviceId;     //!< Chipset subsystem device identification 
+    NvU32               subSysDeviceId;     //!< Chipset subsystem device identification
     NvAPI_ShortString   szSubSysVendorName; //!< subsystem vendor Name
     NvU32               HBvendorId;         //!< Host bridge vendor identification
     NvU32               HBdeviceId;         //!< Host bridge device identification
@@ -24954,7 +25139,7 @@ NVAPI_INTERFACE NvAPI_SYS_GetChipSetInfo(NV_CHIPSET_INFO *pChipSetInfo);
 
 //! \ingroup sysgeneral
 //! Lid and dock information - used in NvAPI_GetLidDockInfo()
-typedef struct 
+typedef struct
 {
     NvU32 version;    //! Structure version, constructed from the macro #NV_LID_DOCK_PARAMS_VER
     NvU32 currentLidState;
@@ -24979,11 +25164,11 @@ typedef struct
 //!
 //! \since Release: 177
 //!
-//! \retval ::NVAPI_OK  
+//! \retval ::NVAPI_OK
 //! \retval ::NVAPI_ERROR
 //! \retval ::NVAPI_NOT_SUPPORTED
 //! \retval ::NVAPI_HANDLE_INVALIDATED
-//! \retval ::NVAPI_API_NOT_INTIALIZED 
+//! \retval ::NVAPI_API_NOT_INTIALIZED
 //!
 //! \ingroup sysgeneral
 ///////////////////////////////////////////////////////////////////////////////
@@ -25002,7 +25187,7 @@ NVAPI_INTERFACE NvAPI_SYS_GetLidAndDockInfo(NV_LID_DOCK_PARAMS *pLidAndDock);
 //!
 //!
 //! \param [in]     hPhysicalGpu   Handle to the physical GPU
-//! \param [in]     outputId       Connected display output ID on the 
+//! \param [in]     outputId       Connected display output ID on the
 //!                                target GPU - must only have one bit set
 //! \param [out]    displayId      Pointer to an NvU32 which contains
 //!                                 the display ID
@@ -25025,19 +25210,19 @@ NVAPI_INTERFACE NvAPI_SYS_GetDisplayIdFromGpuAndOutputId(NvPhysicalGpuHandle hPh
 //! SUPPORTED OS:  Windows 10 and higher
 //!
 //!
-//! \param [in]     displayId       Display ID of display to retrieve 
+//! \param [in]     displayId       Display ID of display to retrieve
 //!                                 GPU and outputId for
 //! \param [out]    hPhysicalGpu    Handle to the physical GPU
-//! \param [out]    outputId )      Connected display output ID on the 
+//! \param [out]    outputId )      Connected display output ID on the
 //!                                 target GPU will only have one bit set.
 //!
-//! \retval ::NVAPI_OK 
-//! \retval ::NVAPI_API_NOT_INTIALIZED 
-//! \retval ::NVAPI_ID_OUT_OF_RANGE    The DisplayId corresponds to a 
+//! \retval ::NVAPI_OK
+//! \retval ::NVAPI_API_NOT_INTIALIZED
+//! \retval ::NVAPI_ID_OUT_OF_RANGE    The DisplayId corresponds to a
 //!                                    display which is not within the
 //!                                    normal outputId range.
-//! \retval ::NVAPI_ERROR   
-//! \retval ::NVAPI_INVALID_ARGUMENT 
+//! \retval ::NVAPI_ERROR
+//! \retval ::NVAPI_INVALID_ARGUMENT
 //!
 //! \ingroup sysgeneral
 ///////////////////////////////////////////////////////////////////////////////
@@ -25055,7 +25240,7 @@ NVAPI_INTERFACE NvAPI_SYS_GetGpuAndOutputIdFromDisplayId(NvU32 displayId, NvPhys
 //! SUPPORTED OS:  Windows 10 and higher
 //!
 //!
-//! PARAMETERS:      displayId(IN)     - Display ID of display to retrieve 
+//! PARAMETERS:      displayId(IN)     - Display ID of display to retrieve
 //!                                      GPU handle
 //!                  hPhysicalGpu(OUT) - Handle to the physical GPU
 //!
@@ -25151,7 +25336,7 @@ typedef struct _NV_PHYSICAL_GPUS
 {
     NvU32                           version;                                    //<! [IN]  Structure Version
     NV_PHYSICAL_GPU_HANDLE_DATA     gpuHandleData[NVAPI_MAX_PHYSICAL_GPUS];     //<! [OUT] The GPU handle data returned by the API.
-    NvU32                           gpuHandleCount;                             //<! [OUT] The number of GPU handles returned by the API in 'gpuHandleData' array. 
+    NvU32                           gpuHandleCount;                             //<! [OUT] The number of GPU handles returned by the API in 'gpuHandleData' array.
     NvU32                           reserved[4];                                //<! Reserved for future use
 } NV_PHYSICAL_GPUS_V1;
 
@@ -25234,7 +25419,8 @@ NVAPI_INTERFACE NvAPI_SYS_GetLogicalGPUs(__inout NV_LOGICAL_GPUS *pLogicalGPUs);
 
 typedef enum _NV_NGX_DRIVER_FEATURE_ID
 {
-    NV_NGX_DRIVER_FEATURE_ID_SET_FLIP_CONFIG_V2 = 0x343dcf,
+    NV_NGX_DRIVER_FEATURE_ID_SET_FLIP_CONFIG_V2             = 0x00343dcf,
+    NV_NGX_DRIVER_FEATURE_ID_FRAME_PRESENT_NOTIFY_HYBRID    = 0x836af07b,
 } NV_NGX_DRIVER_FEATURE_ID;
 
 #define NVAPI_MAX_NGX_FEATURES_PER_QUERY 16

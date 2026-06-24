@@ -49,7 +49,7 @@
 NvAPI_Status ApplyCustomDisplay();
 
 // This function enumerates the display Ids of all the connected displays
-NvAPI_Status GetConnectedDisplays(NvU32 *displayIds, NvU32 *noDisplays);
+NvAPI_Status GetConnectedDisplays(NvU32 *displayIds, NvU32 capacity, NvU32 *noDisplays);
 
 // This function applies custom display settings, saves them and reverts back.
 void loadCustomDisplay(NV_CUSTOM_DISPLAY *customDisplay);
@@ -105,7 +105,7 @@ void loadCustomDisplay(NV_CUSTOM_DISPLAY *cd)
     cd->yRatio          = 1;
 }
 
-NvAPI_Status GetConnectedDisplays(NvU32 *displayIds, NvU32 *noDisplays)
+NvAPI_Status GetConnectedDisplays(NvU32 *displayIds, NvU32 capacity, NvU32 *noDisplays)
 {
     NvAPI_Status ret = NVAPI_OK;
 
@@ -133,7 +133,7 @@ NvAPI_Status GetConnectedDisplays(NvU32 *displayIds, NvU32 *noDisplays)
         {
             // alocations for the display ids
             NV_GPU_DISPLAYIDS *dispIds = (NV_GPU_DISPLAYIDS *)malloc( sizeof(NV_GPU_DISPLAYIDS)*dispIdCount );
-            
+            if (!dispIds) return NVAPI_OUT_OF_MEMORY;
             for(NvU32 dispIndex = 0; dispIndex < dispIdCount; dispIndex++)
             {
                 dispIds[dispIndex].version = NV_GPU_DISPLAYIDS_VER; // adding the correct version information
@@ -142,6 +142,7 @@ NvAPI_Status GetConnectedDisplays(NvU32 *displayIds, NvU32 *noDisplays)
             // second call to get the display ids
             if(NvAPI_GPU_GetConnectedDisplayIds(nvGPUHandle[Count], dispIds, &dispIdCount, 0) != NVAPI_OK)
             {
+                free(dispIds);
                 return NVAPI_ERROR;
             }
 
@@ -151,9 +152,11 @@ NvAPI_Status GetConnectedDisplays(NvU32 *displayIds, NvU32 *noDisplays)
                 {
                     continue;
                 }
+                if (noDisplay >= capacity) break;
                 displayIds[noDisplay] = dispIds[dispIndex].displayId;
                 noDisplay++;  
             }
+            free(dispIds);
         }
     }
 
@@ -171,7 +174,7 @@ NvAPI_Status ApplyCustomDisplay()
 
     NvU32 displayIds[NVAPI_MAX_DISPLAYS] = {0};
 
-    ret = GetConnectedDisplays(&displayIds[0],&noDisplays);
+    ret = GetConnectedDisplays(&displayIds[0], NVAPI_MAX_DISPLAYS, &noDisplays);
     if(ret != NVAPI_OK)
     {
         printf("\nCall to GetConnectedDisplays() failed");
@@ -248,7 +251,7 @@ NvAPI_Status ApplyCustomDisplay()
     printf("NvAPI_DISP_RevertCustomDisplayTrial()");
 
     // Revert the new custom display settings tried.
-    ret = NvAPI_DISP_RevertCustomDisplayTrial(&displayIds[0],1);
+    ret = NvAPI_DISP_RevertCustomDisplayTrial(&displayIds[0], noDisplays);
     if ( ret != NVAPI_OK)
     {
         printf("NvAPI_DISP_RevertCustomDisplayTrial() failed = %d", ret);		//failed to revert custom display trail

@@ -85,6 +85,12 @@ NvAPI_Status GetConnectedDisplays(NvPhysicalGpuHandle gpuHandle, NV_GPU_DISPLAYI
     if (displayCount == 0)
         return nvapiReturnStatus;
 
+    if (displayCount > NVAPI_MAX_DISPLAYS)
+    {
+        printf("\nDisplay count is greater than NVAPI_MAX_DISPLAYS.\nReturn Error : %s", GetNvAPIStatusString(nvapiReturnStatus));
+        return NVAPI_INVALID_ARGUMENT;
+    }
+
     // alocation for the display ids
     NV_GPU_DISPLAYIDS *dispIds = new NV_GPU_DISPLAYIDS[displayCount];
     if (!dispIds)
@@ -92,12 +98,19 @@ NvAPI_Status GetConnectedDisplays(NvPhysicalGpuHandle gpuHandle, NV_GPU_DISPLAYI
         return NVAPI_OUT_OF_MEMORY;
     }
 
-    dispIds[0].version = NV_GPU_DISPLAYIDS_VER;
+    for (NvU32 i = 0; i < displayCount; i++)
+    {
+        dispIds[i].version = NV_GPU_DISPLAYIDS_VER;
+    }
 
     nvapiReturnStatus = NvAPI_GPU_GetConnectedDisplayIds(gpuHandle, dispIds, &displayCount, 0);
     if (nvapiReturnStatus == NVAPI_OK)
     {
-        memcpy_s(pDisplayID, sizeof(NV_GPU_DISPLAYIDS) * NVAPI_MAX_DISPLAYS, dispIds, sizeof(NV_GPU_DISPLAYIDS) * displayCount);
+        if (memcpy_s(pDisplayID, sizeof(NV_GPU_DISPLAYIDS) * NVAPI_MAX_DISPLAYS, dispIds, sizeof(NV_GPU_DISPLAYIDS) * displayCount) != 0)
+        {
+            delete[] dispIds;
+            return NVAPI_ERROR;
+        }
         displayIdCount = displayCount;
     }
 

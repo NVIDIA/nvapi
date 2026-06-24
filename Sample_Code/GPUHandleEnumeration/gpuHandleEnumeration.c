@@ -71,7 +71,7 @@ int main()
     }
 
     printf("\n\nThe enumerated logical GPU handles are listed below. GPU_Count=%d.\n", nvLogicalGPUs.gpuHandleCount);
-    for (NvU32 i = 0; i < nvLogicalGPUs.gpuHandleCount; i++)
+    for (NvU32 i = 0; i < nvLogicalGPUs.gpuHandleCount && i < NVAPI_MAX_LOGICAL_GPUS; i++)
     {
         printf("\nLogical_GPUHandle[%d]:0x%p | AdapterType = %d", i, nvLogicalGPUs.gpuHandleData[i].hLogicalGpu,
                nvLogicalGPUs.gpuHandleData[i].adapterType);
@@ -91,7 +91,7 @@ int main()
         return -1;
     }
 
-    for (NvU32 i = 0; i < nvPhysicalGPUs.gpuHandleCount; i++)
+    for (NvU32 i = 0; i < nvPhysicalGPUs.gpuHandleCount && i < NVAPI_MAX_PHYSICAL_GPUS; i++)
     {
         printf("\nPhysical_GPUHandle[%d]:0x%p | AdapterType = %d", i, nvPhysicalGPUs.gpuHandleData[i].hPhysicalGpu,
                nvPhysicalGPUs.gpuHandleData[i].adapterType);

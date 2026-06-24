@@ -28,9 +28,13 @@
 #include <windows.h>
 #include"nvapi.h"
 
+static inline const char* safe_lookup(const char* const* tbl, size_t n, unsigned idx)
+{
+    return (idx < n) ? tbl[idx] : "<invalid>";
+}
 
 static const char* g_connector[] = {"NONE", "PRIMARY", "SECONDARY", "TERTIARY","QUARTERNARY"};
-static const char* g_dispSyncState[] = {"UNSYNCED", "SLAVE", "MASTER"};
+static const char* g_dispSyncState[] = {"UNSYNCED", "CLIENT", "SERVER"};
 static const char* g_RJ45Status[] = {"OUTPUT", "INPUT", "UNUSED"};
 static const char* g_RJ45Ethernet[] = {"NO", "YES"};
 
@@ -92,10 +96,10 @@ NvAPI_Status gSyncQueryParameters(NvGSyncDeviceHandle hNvGSyncDevice)
         printf("Refresh Rate             : %d\n", StatusParams.refreshRate);
         printf("Incoming house sync freq : %d\n", StatusParams.houseSyncIncoming);
         printf("House sync present       : %d\n", StatusParams.bHouseSync);
-        printf("RJ45[0]                  : %s\n", g_RJ45Status[(NvU32)StatusParams.RJ45_IO[0]]);
-        printf("RJ45[1]                  : %s\n", g_RJ45Status[(NvU32)StatusParams.RJ45_IO[1]]);
-        printf("RJ45[0] to ethernet?     : %s\n", g_RJ45Ethernet[StatusParams.RJ45_Ethernet[0]]);
-        printf("RJ45[1] to ethernet?     : %s\n", g_RJ45Ethernet[StatusParams.RJ45_Ethernet[1]]);
+        printf("RJ45[0]                  : %s\n", safe_lookup(g_RJ45Status, sizeof(g_RJ45Status)/sizeof(g_RJ45Status[0]), (NvU32)StatusParams.RJ45_IO[0]));
+        printf("RJ45[1]                  : %s\n", safe_lookup(g_RJ45Status, sizeof(g_RJ45Status)/sizeof(g_RJ45Status[0]), (NvU32)StatusParams.RJ45_IO[1]));
+        printf("RJ45[0] to ethernet?     : %s\n", safe_lookup(g_RJ45Ethernet, sizeof(g_RJ45Ethernet)/sizeof(g_RJ45Ethernet[0]), StatusParams.RJ45_Ethernet[0]));
+        printf("RJ45[1] to ethernet?     : %s\n", safe_lookup(g_RJ45Ethernet, sizeof(g_RJ45Ethernet)/sizeof(g_RJ45Ethernet[0]), StatusParams.RJ45_Ethernet[1]));
     }
     else
     {
@@ -113,7 +117,7 @@ NvAPI_Status gSyncQuerySyncStatus(NvGSyncDeviceHandle nvGSyncHandle)
     NvU32 gsyncGpuCount = 0;
 
     ret = NvAPI_GSync_GetTopology(nvGSyncHandle, &gsyncGpuCount, NULL, NULL, NULL);
-    if ((ret != NVAPI_OK) && (gsyncGpuCount < 1))
+    if ((ret != NVAPI_OK) || (gsyncGpuCount < 1))
     {
         printf("GetTopology Call failed\n");
         return ret;
@@ -169,7 +173,7 @@ NvAPI_Status gsyncGetTopology(NvGSyncDeviceHandle *nvGSyncHandle, NvU32 count)
         NvU32 gsyncDisplayCount = 0;
 
         ret = NvAPI_GSync_GetTopology(nvGSyncHandle[k], &gsyncGpuCount, NULL, &gsyncDisplayCount, NULL);
-        if ((ret != NVAPI_OK))
+        if ((ret != NVAPI_OK) || (gsyncGpuCount < 1) || (gsyncDisplayCount < 1))
         {
             printf("GetTopology Call failed\n");
             return ret;
@@ -183,7 +187,7 @@ NvAPI_Status gsyncGetTopology(NvGSyncDeviceHandle *nvGSyncHandle, NvU32 count)
         
         gsyncSysInfo.gsyncTopo[k].hNvGSyncDevice = nvGSyncHandle[k];
         ret = NvAPI_GSync_GetTopology(nvGSyncHandle[k], &gsyncGpuCount, pGsyncGpu, &gsyncDisplayCount, pGsyncDisp);
-        if (ret != NVAPI_OK)
+        if ((ret != NVAPI_OK) || (gsyncGpuCount < 1) || (gsyncDisplayCount < 1))
         {
             printf("GetTopology Call failed\n");
 
@@ -201,8 +205,8 @@ NvAPI_Status gsyncGetTopology(NvGSyncDeviceHandle *nvGSyncHandle, NvU32 count)
             return ret;
         }
 
-        gsyncSysInfo.gsyncTopo[k].gpuCount = gsyncGpuCount;
-        for(NvU32 i=0; i<gsyncGpuCount; i++)
+        gsyncSysInfo.gsyncTopo[k].gpuCount = (gsyncGpuCount > NVAPI_MAX_GPUS_PER_GSYNC) ? NVAPI_MAX_GPUS_PER_GSYNC : gsyncGpuCount;
+        for(NvU32 i=0; i<gsyncSysInfo.gsyncTopo[k].gpuCount; i++)
         {
             gsyncSysInfo.gsyncTopo[k].gpus[i].hPhysicalGpu = pGsyncGpu[i].hPhysicalGpu;
             gsyncSysInfo.gsyncTopo[k].gpus[i].connector = pGsyncGpu[i].connector;
@@ -210,7 +214,7 @@ NvAPI_Status gsyncGetTopology(NvGSyncDeviceHandle *nvGSyncHandle, NvU32 count)
             gsyncSysInfo.gsyncTopo[k].gpus[i].isSynced = pGsyncGpu[i].isSynced;
           
         }
-        for(NvU32 j=0; j<gsyncDisplayCount; j++)
+        for(NvU32 j=0; j<gsyncDisplayCount && m<(NVAPI_MAX_GPUS_PER_GSYNC*NV_MAX_HEADS); j++)
         {    
             gsyncSysInfo.displays[m].displayId = pGsyncDisp[j].displayId;
             gsyncSysInfo.displays[m].isMasterable = pGsyncDisp[j].isMasterable;
@@ -268,7 +272,7 @@ void printGsyncTopo()
         for(NvU32 i=0; i<gsyncSysInfo.gsyncTopo[k].gpuCount; i++)
         {
             printf("\t\tGPU Handle       : 0x%x\n", gsyncSysInfo.gsyncTopo[k].gpus[i].hPhysicalGpu);
-            printf("\t\tConnector        : %s\n", g_connector[gsyncSysInfo.gsyncTopo[k].gpus[i].connector]);
+            printf("\t\tConnector        : %s\n", safe_lookup(g_connector, sizeof(g_connector)/sizeof(g_connector[0]), gsyncSysInfo.gsyncTopo[k].gpus[i].connector));
             printf("\t\tProxy GPU Handle : 0x%x\n", gsyncSysInfo.gsyncTopo[k].gpus[i].hProxyPhysicalGpu);
             printf("\t\tIs synced        : %d\n", gsyncSysInfo.gsyncTopo[k].gpus[i].isSynced);
             NvPhysicalGpuHandle hPhysicalGpu = NULL;
@@ -278,8 +282,8 @@ void printGsyncTopo()
                 if(hPhysicalGpu != gsyncSysInfo.gsyncTopo[k].gpus[i].hPhysicalGpu)
                     continue;
                 printf("\t\t\tdisplay(%d) with displayId : 0x%x\n", j, gsyncSysInfo.displays[j].displayId);
-                printf("\t\t\t\tmasterable : 0x%x\n", gsyncSysInfo.displays[j].isMasterable);
-                printf("\t\t\t\tsyncstate : %s\n", g_dispSyncState[gsyncSysInfo.displays[j].syncState]);
+                printf("\t\t\t\tsyncServerCapable : 0x%x\n", gsyncSysInfo.displays[j].isMasterable);
+                printf("\t\t\t\tsyncstate : %s\n", safe_lookup(g_dispSyncState, sizeof(g_dispSyncState)/sizeof(g_dispSyncState[0]), gsyncSysInfo.displays[j].syncState));
             }
         }
     }
@@ -337,25 +341,25 @@ int main(int argc, char** argv)
         printGsyncTopo();
         return 0;
     }
-    // SetSync with one master and rest slaves
+    // SetSync with one server and rest clients
     else if(stricmp(argv[index], "setSync") == 0)
     {
         NvU32 flags = 0 ;
         GSyncUserSettings gsyncUserSettings;
         memset(&gsyncUserSettings,0,sizeof(GSyncUserSettings));
-        gsyncUserSettings.displays[0].version = NV_GSYNC_DISPLAY_VER;
 
         NvU32 dispIndex = 0;
-        bool isMasterableFound = false;
+        bool isSyncServerCapableFound = false;
         gsyncUserSettings.dispCount = gsyncSysInfo.dispCount;
         for (dispIndex = 0 ; dispIndex < gsyncSysInfo.dispCount; dispIndex++)
         {
+            gsyncUserSettings.displays[dispIndex].version      = NV_GSYNC_DISPLAY_VER;
             gsyncUserSettings.displays[dispIndex].displayId    = gsyncSysInfo.displays[dispIndex].displayId;            
             gsyncUserSettings.displays[dispIndex].reserved     = gsyncSysInfo.displays[dispIndex].reserved;
-            if (!isMasterableFound && gsyncSysInfo.displays[dispIndex].isMasterable)
+            if (!isSyncServerCapableFound && gsyncSysInfo.displays[dispIndex].isMasterable)
             {
                 gsyncUserSettings.displays[dispIndex].syncState = NVAPI_GSYNC_DISPLAY_SYNC_STATE_MASTER;
-                isMasterableFound = true;
+                isSyncServerCapableFound = true;
             }
             else
             {
@@ -380,10 +384,17 @@ int main(int argc, char** argv)
     else if(stricmp(argv[index], "unSync") == 0)
     {
         NvU32 flags = 0 ;
-        GSyncUserSettings gsyncUserSettings = {0};  
-        gsyncUserSettings.displays[0].version = NV_GSYNC_DISPLAY_VER;
+        GSyncUserSettings gsyncUserSettings;
+        memset(&gsyncUserSettings, 0, sizeof(GSyncUserSettings));
 
-        gsyncUserSettings.dispCount = 0;
+        gsyncUserSettings.dispCount = gsyncSysInfo.dispCount;
+        for (NvU32 dispIndex = 0; dispIndex < gsyncSysInfo.dispCount; dispIndex++)
+        {
+            gsyncUserSettings.displays[dispIndex].version   = NV_GSYNC_DISPLAY_VER;
+            gsyncUserSettings.displays[dispIndex].displayId = gsyncSysInfo.displays[dispIndex].displayId;
+            gsyncUserSettings.displays[dispIndex].reserved  = gsyncSysInfo.displays[dispIndex].reserved;
+            gsyncUserSettings.displays[dispIndex].syncState = NVAPI_GSYNC_DISPLAY_SYNC_STATE_UNSYNCED;
+        }
         ret = NvAPI_GSync_SetSyncStateSettings(gsyncUserSettings.dispCount, gsyncUserSettings.displays, flags);
         if(ret!=NVAPI_OK)
         {
