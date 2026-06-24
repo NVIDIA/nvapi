@@ -132,7 +132,7 @@ NvAPI_Status GetConnectedDisplays(NvU32 *displayIds, NvU32 capacity, NvU32 *noDi
         if(dispIdCount > 0) // If no. of displays connected > 0 we can proceed to check if its active
         {
             // alocations for the display ids
-            NV_GPU_DISPLAYIDS *dispIds = (NV_GPU_DISPLAYIDS *)malloc( sizeof(NV_GPU_DISPLAYIDS)*dispIdCount );
+            NV_GPU_DISPLAYIDS *dispIds = (NV_GPU_DISPLAYIDS *)calloc( dispIdCount, sizeof(NV_GPU_DISPLAYIDS) );
             if (!dispIds) return NVAPI_OUT_OF_MEMORY;
             for(NvU32 dispIndex = 0; dispIndex < dispIdCount; dispIndex++)
             {
