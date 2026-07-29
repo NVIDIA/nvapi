@@ -11644,7 +11644,7 @@ NVAPI_INTERFACE NvAPI_D3D11_SetNvShaderExtnSlot(__in IUnknown *pDev,
 
 #endif //defined (__cplusplus) && (defined(__d3d11_h__) || defined(__d3d11_1_h__))
 
-#if defined (__cplusplus) && defined (__d3d12_h__)
+#if defined (__d3d12_h__)
 
 ///////////////////////////////////////////////////////////////////////////////
 //
@@ -19099,7 +19099,7 @@ NVAPI_INTERFACE NvAPI_D3D11_GetResourceGPUVirtualAddress(__in  ID3D11Device*    
 #endif //defined(__cplusplus) && defined(__d3d11_h__)
 
 
-#if defined(__cplusplus) && defined(__d3d12_h__)
+#if defined(__d3d12_h__)
 //! Flags specifying raytracing thread reordering hardware support.
 //! Additional flags will be added as support becomes available.
 //!
