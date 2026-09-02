@@ -23,7 +23,6 @@
 |*                                                                                                        *|
 |*                                                                                                        *|
 \*********************************************************************************************************/
-
 #ifndef _NVAPI_INTERFACE_H
 #define _NVAPI_INTERFACE_H
 
@@ -429,6 +428,10 @@ struct NVAPI_INTERFACE_TABLE nvapi_interface_table[] =
     { "NvAPI_D3D12_BuildRaytracingPartitionedTlasIndirect", 0x7cfc6fc3 },
     { "NvAPI_NGX_GetNGXOverrideState", 0x3fd96fba },
     { "NvAPI_NGX_SetNGXOverrideState", 0xb60fcb4e },
+    { "NvAPI_NGX_OpenSession", 0x01e8617e },
+    { "NvAPI_NGX_CloseSession", 0xea344918 },
+    { "NvAPI_NGX_SetRuntimeParams", 0x4759895a },
+    { "NvAPI_NGX_GetRuntimeParams", 0x0b7ebd7c },
     { "NvAPI_DirectD3D12GraphicsCommandList_Create", 0x74a4e712 },
     { "NvAPI_DirectD3D12GraphicsCommandList_Release", 0x99da3dde },
     { "NvAPI_DirectD3D12GraphicsCommandList_Reset", 0x999c26d8 },

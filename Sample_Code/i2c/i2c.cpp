@@ -20,7 +20,6 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
  */
-
 ////////////////////////////////////////////////////////////////////////////////////
 // @brief: This sample changes the brightness of a monitor over the i2c bus.
 //		   It checks whether the monitor connected to the system is
@@ -113,7 +112,7 @@ int main()
     for (unsigned int i = 0; i < nvDisplayCount; i++)
     {
         // Get GPU id assiciated with display ID
-        NvPhysicalGpuHandle hGpu[NVAPI_MAX_PHYSICAL_GPUS] = {0};
+        NvPhysicalGpuHandle hGpu[NVAPI_MAX_PHYSICAL_GPUS]= {0};
 		NvU32 pGpuCount=0;
         nvapiStatus = NvAPI_GetPhysicalGPUsFromDisplay(hDisplay_a[i], hGpu, &pGpuCount);
         if (nvapiStatus != NVAPI_OK)

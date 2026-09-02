@@ -25,10 +25,10 @@
 \*********************************************************************************************************/
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
-// Date: Jun 1, 2026 
+// Date: Sep 2, 2026 
 // File: nvapi.h
 //
-// NvAPI provides an interface to NVIDIA devices. This file contains the 
+// NvAPI provides an interface to NVIDIA devices. This file contains the
 // interface constants, structure definitions and function prototypes.
 //
 //   Target Profile: Open-Source
@@ -1988,7 +1988,7 @@ typedef struct _NV_GPU_DISPLAYIDS
 //!
 //! \retval  NVAPI_INVALID_ARGUMENT: hPhysicalGpu or pDisplayIds or pDisplayIdCount is NULL
 //! \retval  NVAPI_OK: *pDisplayIds contains a set of GPU-output identifiers
-//! \retval  NVAPI_NVIDIA_DEVICE_NOT_FOUND: no NVIDIA GPU driving a display was found
+//! \retval  NVAPI_NO_CONNECTOR_FOUND: the hPhysicalGpu doesn't have valid display connectors
 //! \retval  NVAPI_EXPECTED_PHYSICAL_GPU_HANDLE: hPhysicalGpu was not a physical GPU handle
 //! 
 //! \ingroup gpu
@@ -4202,6 +4202,7 @@ typedef enum _NV_LICENSE_FEATURE_TYPE
     NV_LICENSE_FEATURE_QUADRO    = NV_LICENSE_FEATURE_NVIDIA_RTX, //!< DEPRECATED name - do not use
     NV_LICENSE_FEATURE_GAMING    = 3,
     NV_LICENSE_FEATURE_COMPUTE   = 4,
+    NV_LICENSE_FEATURE_VGAMEDEV = 5,
 } NV_LICENSE_FEATURE_TYPE;
 
 //! Used in NV_LICENSE_FEATURE_DETAILS
@@ -5555,7 +5556,7 @@ typedef struct _NV_GPU_OVERCLOCK_STATUS_V1
     NvU32 reserved:31;
     /*!
      * Reserved for future use.
-     */          
+     */
     NvU32 rsvd[16];
 } NV_GPU_OVERCLOCK_STATUS_V1,
 *PNV_GPU_OVERCLOCK_STATUS_V1;
@@ -5573,7 +5574,7 @@ typedef NV_GPU_OVERCLOCK_STATUS_V1 NV_GPU_OVERCLOCK_STATUS, *PNV_GPU_OVERCLOCK_S
 // FUNCTION NAME:    NvAPI_GPU_GetOverclockStatus()
 //
 //! DESCRIPTION: This API retrieves information about whether the GPU has any
-//!              overclocking. 
+//!              overclocking.
 //!
 //!              This API is intended for game developers who want to detect if the GPU
 //!              is running a non-default clocking configuration, which may affect
@@ -8668,7 +8669,8 @@ typedef struct _NV_MONITOR_CAPS_GENERIC
     NvU8    isRLACapable                 : 1;  //!< whether monitor supports RLA
     NvU8    currentlyCapableOfVRR        : 1;  //!< monitor currently supports VRR on applied display settings. Valid for NV_MONITOR_CAPS_TYPE_GENERIC only.
     NvU8    isBasicVRR                   : 1;
-    NvU8    reserved                     : 2;
+    NvU8    isBasicEdp                   : 1;  //!< whether a monitor is considered "Basic eDP"
+    NvU8    reserved                     : 1;
 } NV_MONITOR_CAPS_GENERIC;
 
 //! See NvAPI_DISP_GetMonitorCapabilities().
@@ -9158,7 +9160,8 @@ typedef struct _NV_GET_ADAPTIVE_SYNC_DATA_V1
     NvU32  reserved : 30;                 //!<         reserved for future use.
     NvU32  lastFlipRefreshCount;          //!< [out]   Number of times the last flip was shown on the screen
     NvU64  lastFlipTimeStamp;             //!< [out]   Timestamp for the lastest flip on the screen
-    NvU32  reservedEx[4];                 //!<         reserved for future use.
+    NvU32  flipToken;                     //!< [out]   flipToken for the latest flip on the screen
+    NvU32  reservedEx[3];                 //!<         reserved for future use.
 } NV_GET_ADAPTIVE_SYNC_DATA_V1;
 
 #define NV_GET_ADAPTIVE_SYNC_DATA_VER1  MAKE_NVAPI_VERSION(NV_GET_ADAPTIVE_SYNC_DATA_V1,1)
@@ -15907,7 +15910,7 @@ typedef struct _NV_FLIP_CONFIG_V2
     NvU32   flipConfigFeedbackMask;   //!< [out] Feedback from the driver, a mask of bits from \ref NVAPI_FLIP_CONFIG_FEEDBACK_MASK
     NvU32   nPresentedFramesPerBatch; //!< [in] Number of presented frames per batch (always provided to driver, even when flip metering is disabled)
     NvF32   timePerBatchMs;           //!< [in] Time per batch in milliseconds, <= 0 if unknown
-    NvU32   reserved;                 //!< Reserved, must be 0
+    NvF32   minControlFrameTimeMs;    //!< [in] Minimum time between control frame and previous frame, typically 0
 } NV_FLIP_CONFIG_V2;
 
 typedef NV_FLIP_CONFIG_V2     NV_FLIP_CONFIG;
@@ -18255,7 +18258,9 @@ typedef struct _NV_GET_SLEEP_STATUS_PARAMS
     NvBool bUseGameSleep;                                 //!< (OUT) Is NvAPI_D3D_Sleep() being called?
     NvBool bFullscreenIFlip;                              //!< (OUT) Is in fullscreen/iFlip mode?
     NvU8   fgMultiplier;                                  //!< (OUT) Latest Frame Generation multiplier used.
-    NvU8   rsvd[119];                                     //!< (IN) Reserved. Must be set to 0s.
+    NvBool bDfgControl;                                   //!< (OUT) Dynamic Frame Generation control active.
+    NvU32  dfgFrameTimeTargetUs;                          //!< (OUT) Dynamic Frame Generation frame time target in microseconds.
+    NvU8   rsvd[114];                                     //!< (IN) Reserved. Must be set to 0s.
 } NV_GET_SLEEP_STATUS_PARAMS_V1;
 
 typedef NV_GET_SLEEP_STATUS_PARAMS_V1            NV_GET_SLEEP_STATUS_PARAMS;
@@ -18393,7 +18398,10 @@ typedef struct _NV_SET_REFLEX_SYNC_PARAMS
     NvS32  timeInQueueUs;                                 //!< (IN) Amount of time in the completed frame queue. Can be negative. (0 means N/A)
     NvU32  timeInQueueUsTarget;                           //!< (IN) Target amount of time in the completed frame queue. (0 means N/A)
     NvU8   fgMultiplier;                                  //!< (IN) Specify the frame generation multipler to use. (0 means driver should auto-detect)
-    NvU8   rsvd[27];                                      //!< (IN) Reserved. Must be set to 0s.
+    NvU8   dfgMaxMultiplier;                              //!< (IN) Specify the Dynamic Frame Generation's max multipler. (0 means disable driver control)
+    NvU8   rsvd1[2];                                      //!< (IN) Reserved. Must be set to 0s.
+    NvU32  dfgTargetFps;                                  //!< (IN) Dynamic Frame Generation's target FPS. (0 means disable driver control)
+    NvU8   rsvd[20];                                      //!< (IN) Reserved. Must be set to 0s.
 } NV_SET_REFLEX_SYNC_PARAMS_V1;
 
 typedef NV_SET_REFLEX_SYNC_PARAMS_V1            NV_SET_REFLEX_SYNC_PARAMS;
@@ -18627,6 +18635,7 @@ typedef enum
     OUT_OF_BAND_PRESENT = 1,
     OUT_OF_BAND_IGNORE  = 2,
     OUT_OF_BAND_RENDER_PRESENT = 3,
+    OUT_OF_BAND_EXPLICIT_COPY = 4,
 } NV_OUT_OF_BAND_CQ_TYPE;
 
 #if defined(__cplusplus) && defined(__d3d12_h__)
@@ -20914,7 +20923,8 @@ typedef enum _NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_MODE
 {
     NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_MODE_IMPLICIT_DESTINATIONS   = 0, //!< User provides total buffer space, driver places results within, returns VAs and actual sizes
     NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_MODE_EXPLICIT_DESTINATIONS   = 1, //!< User provides individual target VAs, driver places them there, returns actual sizes
-    NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_MODE_GET_SIZES               = 2, //!< Driver returns maximum sizes per element, results may only be used with NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_MODE_EXPLICIT_DESTINATIONS
+    NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_MODE_GET_SIZES               = 2, //!< Driver returns maximum sizes per element, results may only be used with NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_MODE_EXPLICIT_DESTINATIONS.
+                                                                                              //!< Per-arg vertex and index buffer pointers may be NULL in this mode; a conservative worst-case size derived from the triangle/vertex counts is returned then.
 } NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_MODE;
 
 //! Desc used for operation type NVAPI_D3D12_RAYTRACING_MULTI_INDIRECT_CLUSTER_OPERATION_TYPE_BUILD_BLAS_FROM_CLAS
@@ -21430,6 +21440,7 @@ typedef enum {
 #define NV_NGX_DLSS_OVERRIDE_FEATURE_INDEX_SR       1
 #define NV_NGX_DLSS_OVERRIDE_FEATURE_INDEX_RR       2
 #define NV_NGX_DLSS_OVERRIDE_FEATURE_INDEX_FG       3
+#define NV_NGX_DLSS_OVERRIDE_FEATURE_INDEX_RESERVED 4
 
 typedef struct _NV_NGX_DLSS_OVERRIDE_GET_STATE_PARAMS_V1
 {
@@ -21447,9 +21458,29 @@ typedef struct _NV_NGX_DLSS_OVERRIDE_GET_STATE_PARAMS_V1
     NvU32  reserved[2];             //!< Reserved for future use. Must be zero.
 } NV_NGX_DLSS_OVERRIDE_GET_STATE_PARAMS_V1;
 
+typedef struct _NV_NGX_DLSS_OVERRIDE_GET_STATE_PARAMS_V2
+{
+    NvU32  version;                 //!< [in] Structure version
+    NvU32  processIdentifier;       //!< [in] Process Identifier
+    NvU64  feedbackMaskSR;          //!< [out] Feedback bits for Super Resolution
+    NvU64  feedbackMaskRR;          //!< [out] Feedback bits for Ray Reconstruction
+    NvU64  feedbackMaskFG;          //!< [out] Feedback bits for Frame Generation
+    NvF32  scalingRatio;            //!< [out] Scaling Ratio
+    NvU32  performanceMode;         //!< [out] Performance Mode
+    NvU32  renderPreset;            //!< [out] Render Preset for SR/RR
+    NvU32  frameGenerationCount;    //!< [out] FG Override Frame Count Target
+    NvU32  frameGenerationPreset;   //!< [out] Render Preset for FG
+    NvU32  frameGenerationMode;     //!< [out] Frame Generation Mode
+    NvU64  reserved0;               //!< Reserved for future use. Must be zero.
+    NvU32  reserved1;               //!< Reserved for future use. Must be zero.
+    NvU32  reserved[7];             //!< Reserved for future use. Must be zero.
+} NV_NGX_DLSS_OVERRIDE_GET_STATE_PARAMS_V2;
+
+
 #define NV_NGX_DLSS_OVERRIDE_GET_STATE_PARAMS_VER1  MAKE_NVAPI_VERSION(NV_NGX_DLSS_OVERRIDE_GET_STATE_PARAMS_V1, 1)
-#define NV_NGX_DLSS_OVERRIDE_GET_STATE_PARAMS_VER   NV_NGX_DLSS_OVERRIDE_GET_STATE_PARAMS_VER1
-typedef NV_NGX_DLSS_OVERRIDE_GET_STATE_PARAMS_V1    NV_NGX_DLSS_OVERRIDE_GET_STATE_PARAMS;
+#define NV_NGX_DLSS_OVERRIDE_GET_STATE_PARAMS_VER2  MAKE_NVAPI_VERSION(NV_NGX_DLSS_OVERRIDE_GET_STATE_PARAMS_V2, 2)
+#define NV_NGX_DLSS_OVERRIDE_GET_STATE_PARAMS_VER   NV_NGX_DLSS_OVERRIDE_GET_STATE_PARAMS_VER2
+typedef NV_NGX_DLSS_OVERRIDE_GET_STATE_PARAMS_V2    NV_NGX_DLSS_OVERRIDE_GET_STATE_PARAMS;
 ///////////////////////////////////////////////////////////////////////////////
 //
 // FUNCTION NAME: NvAPI_NGX_GetNGXOverrideState
@@ -21503,6 +21534,209 @@ typedef NV_NGX_DLSS_OVERRIDE_SET_STATE_PARAMS_V1    NV_NGX_DLSS_OVERRIDE_SET_STA
 //! \ingroup dx
 ///////////////////////////////////////////////////////////////////////////////
 NVAPI_INTERFACE NvAPI_NGX_SetNGXOverrideState(__in NV_NGX_DLSS_OVERRIDE_SET_STATE_PARAMS* pSetOverrideStateParams);
+
+
+//! Runtime keys are carried as NvU64 in NV_NGX_RUNTIME_KEY_VALUE::value; use
+//! NV_NGX_PACK_FP / NV_NGX_UNPACK_FP for fixed-point float payloads. When persist is
+//! true, values are stored in DRS as QWORD settings.
+#ifndef NV_NGX_RUNTIME_KEY_DEFINED
+#define NV_NGX_RUNTIME_KEY_DEFINED
+
+typedef enum _NV_NGX_RUNTIME_KEY
+{
+    NV_NGX_RUNTIME_KEY_RESERVED0                    = 0,   //!< reserved
+    NV_NGX_RUNTIME_KEY_RESERVED1                    = 1,   //!< reserved
+    NV_NGX_RUNTIME_KEY_RESERVED2                    = 2,   //!< reserved
+    NV_NGX_RUNTIME_KEY_RESERVED3                    = 3,   //!< reserved
+    NV_NGX_RUNTIME_KEY_RESERVED4                    = 4,   //!< reserved
+    NV_NGX_RUNTIME_KEY_RESERVED5                    = 5,   //!< reserved
+    NV_NGX_RUNTIME_KEY_RESERVED6                    = 6,   //!< reserved
+    NV_NGX_RUNTIME_KEY_RESERVED7                    = 7,   //!< reserved
+    NV_NGX_RUNTIME_KEY_RESERVED8                    = 8,   //!< reserved
+    NV_NGX_RUNTIME_KEY_RESERVED9                    = 9,   //!< reserved
+} NV_NGX_RUNTIME_KEY;
+
+
+#define NV_NGX_RUNTIME_KEY_COUNT 10
+
+typedef struct _NV_NGX_RUNTIME_KEY_VALUE
+{
+    NV_NGX_RUNTIME_KEY  key;       //!< Which parameter
+    NvU32               bIsSet   : 1;  //!< [out] 1 if this key was explicitly written via NvAPI_NGX_SetRuntimeParams.
+                                       //!<       Always 0 on input. NvAPI_NGX_GetRuntimeParams fills this field.
+    NvU32               bClear   : 1;  //!< [in]  1 in NvAPI_NGX_SetRuntimeParams to erase this key from MMF and/or DRS.
+                                       //!<       Always 0 on output from NvAPI_NGX_GetRuntimeParams. value is ignored when bClear=1.
+    NvU32               reserved : 30; //!< Reserved. Must be zero.
+    NvU64               value;     //!< Raw 64-bit transport value; interpret per key type (see enum comments)
+} NV_NGX_RUNTIME_KEY_VALUE;
+
+//! Packs a floating-point value into an NvU64 fixed-point value at 1/1000 precision
+//! for use as NV_NGX_RUNTIME_KEY_VALUE::value.
+#define NV_NGX_PACK_FP(fpValue) \
+    ((NvU64)(NvS64)((double)(fpValue) * 1000.0))
+
+//! Unpacks an NvU64 fixed-point value produced by NV_NGX_PACK_FP back to a
+//! double-precision floating-point value.
+#define NV_NGX_UNPACK_FP(packedValue) \
+    ((double)(NvS64)(packedValue) / 1000.0)
+
+//! Packs a boolean into an NvU64 value (0 or 1) for use as
+//! NV_NGX_RUNTIME_KEY_VALUE::value.
+#define NV_NGX_PACK_BOOL(bValue) \
+    ((NvU64)((bValue) ? 1u : 0u))
+
+#endif // NV_NGX_RUNTIME_KEY_DEFINED
+
+//! Opaque handle to an NGX session.
+//! Internally wraps a pointer to a platform-specific session struct.
+//! Callers must not interpret or dereference; obtain via NvAPI_NGX_OpenSession.
+typedef NvU64 NV_NGX_SESSION;
+
+typedef struct _NV_NGX_SESSION_PARAMS_V1
+{
+    NvU32              version;              //!< [in] Structure version
+    NvU32              processIdentifier;    //!< [in] PID to target (0 = global/DRS-only session)
+    NV_NGX_SESSION     hSession;             //!< [out] Open: opaque session handle; [in] Close: handle to release
+    NvU32              reserved[8];          //!< Reserved for future use. Must be zero.
+} NV_NGX_SESSION_PARAMS_V1;
+
+#define NV_NGX_SESSION_PARAMS_VER1  MAKE_NVAPI_VERSION(NV_NGX_SESSION_PARAMS_V1, 1)
+#define NV_NGX_SESSION_PARAMS_VER   NV_NGX_SESSION_PARAMS_VER1
+typedef NV_NGX_SESSION_PARAMS_V1    NV_NGX_SESSION_PARAMS;
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// FUNCTION NAME: NvAPI_NGX_OpenSession
+//
+//! DESCRIPTION: Opens an NGX session for MMF-based IPC.
+//!              Allocates an internal session struct, opens/maps the shared MMF,
+//!              and locates the PID slot. Returns an opaque handle the caller must
+//!              pass to all subsequent Set/Get calls.
+//!              If processIdentifier is 0, the session is DRS-only (no MMF mapping).
+//!
+//!
+//! SUPPORTED OS:  Windows 10 and higher
+//!
+//!
+//!
+//! \since Release: 615
+//!
+//! \param [inout] pParams  //!< [inout] Session params; processIdentifier in, hSession out
+//!
+//! \return  This API can return any of the error codes enumerated in #NvAPI_Status.
+//!          NVAPI_FILE_NOT_FOUND if the MMF does not exist.
+//!
+//! \ingroup dx
+///////////////////////////////////////////////////////////////////////////////
+NVAPI_INTERFACE NvAPI_NGX_OpenSession(__inout NV_NGX_SESSION_PARAMS* pParams);
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// FUNCTION NAME: NvAPI_NGX_CloseSession
+//
+//! DESCRIPTION: Closes an NGX session previously opened with
+//!              NvAPI_NGX_OpenSession. Unmaps the MMF view, closes the
+//!              handle, frees the internal session struct, and zeroes hSession.
+//!
+//!
+//! SUPPORTED OS:  Windows 10 and higher
+//!
+//!
+//!
+//! \since Release: 615
+//!
+//! \param [inout] pParams  //!< [inout] Session params; hSession in (zeroed on return)
+//!
+//! \return  This API can return any of the error codes enumerated in #NvAPI_Status.
+//!
+//! \ingroup dx
+///////////////////////////////////////////////////////////////////////////////
+NVAPI_INTERFACE NvAPI_NGX_CloseSession(__inout NV_NGX_SESSION_PARAMS* pParams);
+
+
+typedef struct _NV_NGX_SET_RUNTIME_PARAMS_V1
+{
+    NvU32                     version;              //!< [in] Structure version
+    NV_NGX_SESSION            hSession;             //!< [in] Session handle from NvAPI_NGX_OpenSession
+    NvBool                    persist;              //!< [in] true = write to DRS + MMF; false = MMF only
+    NvU32                     count;                //!< [in] Number of entries in pRuntimeValues
+    NV_NGX_RUNTIME_KEY_VALUE* pRuntimeValues;       //!< [in] Array of key/value entries
+    NvU32                     reserved[8];          //!< Reserved for future use. Must be zero.
+} NV_NGX_SET_RUNTIME_PARAMS_V1;
+
+#define NV_NGX_SET_RUNTIME_PARAMS_VER1  MAKE_NVAPI_VERSION(NV_NGX_SET_RUNTIME_PARAMS_V1, 1)
+#define NV_NGX_SET_RUNTIME_PARAMS_VER   NV_NGX_SET_RUNTIME_PARAMS_VER1
+typedef NV_NGX_SET_RUNTIME_PARAMS_V1    NV_NGX_SET_RUNTIME_PARAMS;
+///////////////////////////////////////////////////////////////////////////////
+//
+// FUNCTION NAME: NvAPI_NGX_SetRuntimeParams
+//
+//! DESCRIPTION: This API sets NGX runtime parameters (slider values, mode toggles)
+//!              for a given session. If the session has an active MMF mapping,
+//!              values are written to the inbound MMF region.
+//!              If persist is true, values are also written to DRS for persistence.
+//!              Persisted DRS values are QWORD settings: bool keys must be 0 or 1,
+//!              and float keys are fixed-point values packed with NV_NGX_PACK_FP.
+//!              If bClear is 1 on an entry, the key is erased (MMF validMask bit
+//!              cleared, DRS setting deleted if persist is true). value is ignored
+//!              when bClear is 1.
+//!
+//!
+//! SUPPORTED OS:  Windows 10 and higher
+//!
+//!
+//!
+//! \since Release: 615
+//!
+//! \param [in]   pSetParams  //!< [in] Runtime parameters including session handle and key/value array
+//!
+//! \return  This API can return any of the error codes enumerated in #NvAPI_Status.
+//!
+//! \ingroup dx
+///////////////////////////////////////////////////////////////////////////////
+NVAPI_INTERFACE NvAPI_NGX_SetRuntimeParams(__in NV_NGX_SET_RUNTIME_PARAMS* pSetParams);
+
+
+typedef struct _NV_NGX_GET_RUNTIME_PARAMS_V1
+{
+    NvU32                     version;              //!< [in] Structure version
+    NV_NGX_SESSION            hSession;             //!< [in] Session handle from NvAPI_NGX_OpenSession
+    NvBool                    persist;              //!< [in] true = read from DRS; false = read from MMF inbound
+    NvU32                     count;                //!< [in] Number of entries in pRuntimeValues
+    NV_NGX_RUNTIME_KEY_VALUE* pRuntimeValues;       //!< [in/out] Caller sets .key; NVAPI fills .value and .bIsSet
+    NvU32                     reserved[8];          //!< Reserved for future use. Must be zero.
+} NV_NGX_GET_RUNTIME_PARAMS_V1;
+
+#define NV_NGX_GET_RUNTIME_PARAMS_VER1  MAKE_NVAPI_VERSION(NV_NGX_GET_RUNTIME_PARAMS_V1, 1)
+#define NV_NGX_GET_RUNTIME_PARAMS_VER   NV_NGX_GET_RUNTIME_PARAMS_VER1
+typedef NV_NGX_GET_RUNTIME_PARAMS_V1    NV_NGX_GET_RUNTIME_PARAMS;
+///////////////////////////////////////////////////////////////////////////////
+//
+// FUNCTION NAME: NvAPI_NGX_GetRuntimeParams
+//
+//! DESCRIPTION: This API reads NGX runtime parameters for a given session.
+//!              If persist is true, values are read from DRS (persisted settings).
+//!              DRS-backed values are decoded from QWORD settings using the same
+//!              bool and fixed-point contract as NvAPI_NGX_SetRuntimeParams.
+//!              If persist is false, values are read from the MMF inbound region.
+//!              Caller allocates the key/value array with desired keys; NVAPI fills
+//!              .value and .bIsSet per key. bIsSet is 1 if the key was previously
+//!              written via NvAPI_NGX_SetRuntimeParams, 0 otherwise. bClear is always 0 on output.
+//!
+//!
+//! SUPPORTED OS:  Windows 10 and higher
+//!
+//!
+//!
+//! \since Release: 615
+//!
+//! \param [inout] pGetParams  //!< [inout] Runtime parameters including session handle and key/value array
+//!
+//! \return  This API can return any of the error codes enumerated in #NvAPI_Status.
+//!
+//! \ingroup dx
+///////////////////////////////////////////////////////////////////////////////
+NVAPI_INTERFACE NvAPI_NGX_GetRuntimeParams(__inout NV_NGX_GET_RUNTIME_PARAMS* pGetParams);
 
 
 //! SUPPORTED OS:  Windows 10 and higher
@@ -25421,7 +25655,9 @@ typedef enum _NV_NGX_DRIVER_FEATURE_ID
 {
     NV_NGX_DRIVER_FEATURE_ID_SET_FLIP_CONFIG_V2             = 0x00343dcf,
     NV_NGX_DRIVER_FEATURE_ID_FRAME_PRESENT_NOTIFY_HYBRID    = 0x836af07b,
+    NV_NGX_DRIVER_FEATURE_ID_RESERVED0                      = 0x429a2d34,
 } NV_NGX_DRIVER_FEATURE_ID;
+
 
 #define NVAPI_MAX_NGX_FEATURES_PER_QUERY 16
 

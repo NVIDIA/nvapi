@@ -23,7 +23,6 @@
 |*                                                                                                        *|
 |*                                                                                                        *|
 \*********************************************************************************************************/
-
 #ifndef _NVAPI_DRIVER_SETTINGS_H_
 #define _NVAPI_DRIVER_SETTINGS_H_
 
@@ -116,6 +115,7 @@
 #define SLI_PREDEFINED_MODE_STRING                 L"NVIDIA predefined SLI mode"
 #define SLI_PREDEFINED_MODE_DX10_STRING            L"NVIDIA predefined SLI mode on DirectX 10"
 #define SLI_RENDERING_MODE_STRING                  L"SLI rendering mode"
+#define SL_DLSS_OVERRIDE_STRING                    L"Enable Streamline override"
 #define VRPRERENDERLIMIT_STRING                    L"Virtual Reality pre-rendered frames"
 #define VRRFEATUREINDICATOR_STRING                 L"Toggle the VRR global feature"
 #define VRROVERLAYINDICATOR_STRING                 L"Display the VRR Overlay Indicator"
@@ -245,6 +245,7 @@ enum ESetting {
     SLI_PREDEFINED_MODE_ID                        = 0x1033CEC1,
     SLI_PREDEFINED_MODE_DX10_ID                   = 0x1033CEC2,
     SLI_RENDERING_MODE_ID                         = 0x1033CED1,
+    SL_DLSS_OVERRIDE_ID                           = 0x10E41E06,
     VRPRERENDERLIMIT_ID                           = 0x10111133,
     VRRFEATUREINDICATOR_ID                        = 0x1094F157,
     VRROVERLAYINDICATOR_ID                        = 0x1095F16F,
@@ -283,9 +284,9 @@ enum ESetting {
     SET_VAB_DATA_ID                               = 0x00AB8687,
     VSYNCMODE_ID                                  = 0x00A879CF,
     VSYNCTEARCONTROL_ID                           = 0x005A375C,
-    TOTAL_DWORD_SETTING_NUM = 122,
+    TOTAL_DWORD_SETTING_NUM = 123,
     TOTAL_WSTRING_SETTING_NUM = 5,
-    TOTAL_SETTING_NUM = 127,
+    TOTAL_SETTING_NUM = 128,
     INVALID_SETTING_ID = 0xFFFFFFFF
 };
 
@@ -1122,6 +1123,13 @@ enum EValues_SLI_RENDERING_MODE {
     SLI_RENDERING_MODE_FORCE_AFR_OF_SFR__FALLBACK_3AFR   = 0x00000005,
     SLI_RENDERING_MODE_NUM_VALUES = 6,
     SLI_RENDERING_MODE_DEFAULT = SLI_RENDERING_MODE_AUTOSELECT
+};
+
+enum EValues_SL_DLSS_OVERRIDE {
+    SL_DLSS_OVERRIDE_OFF                                 = 0,
+    SL_DLSS_OVERRIDE_ON                                  = 1,
+    SL_DLSS_OVERRIDE_NUM_VALUES = 2,
+    SL_DLSS_OVERRIDE_DEFAULT = SL_DLSS_OVERRIDE_OFF
 };
 
 enum EValues_VRPRERENDERLIMIT {
