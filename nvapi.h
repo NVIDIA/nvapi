@@ -11647,7 +11647,7 @@ NVAPI_INTERFACE NvAPI_D3D11_SetNvShaderExtnSlot(__in IUnknown *pDev,
 
 #endif //defined (__cplusplus) && (defined(__d3d11_h__) || defined(__d3d11_1_h__))
 
-#if defined (__cplusplus) && defined (__d3d12_h__)
+#if defined (__d3d12_h__)
 
 ///////////////////////////////////////////////////////////////////////////////
 //
@@ -19108,7 +19108,7 @@ NVAPI_INTERFACE NvAPI_D3D11_GetResourceGPUVirtualAddress(__in  ID3D11Device*    
 #endif //defined(__cplusplus) && defined(__d3d11_h__)
 
 
-#if defined(__cplusplus) && defined(__d3d12_h__)
+#if defined(__d3d12_h__)
 //! Flags specifying raytracing thread reordering hardware support.
 //! Additional flags will be added as support becomes available.
 //!
@@ -19232,7 +19232,7 @@ NVAPI_INTERFACE NvAPI_D3D12_GetRaytracingCaps(
     __in    size_t dataSize);
 #endif // defined(__cplusplus) && defined(__d3d12_h__)
 
-#if defined(__cplusplus) && defined(__d3d12_h__) && defined(__ID3D12Device5_INTERFACE_DEFINED__) && defined(__ID3D12GraphicsCommandList4_INTERFACE_DEFINED__)
+#if defined(__d3d12_h__) && defined(__ID3D12Device5_INTERFACE_DEFINED__) && defined(__ID3D12GraphicsCommandList4_INTERFACE_DEFINED__)
 
 //! Flags specifying validation behaviour for raytracing operations.
 //! \ingroup dx
@@ -19383,7 +19383,7 @@ NVAPI_INTERFACE NvAPI_D3D12_UnregisterRaytracingValidationMessageCallback(
 NVAPI_INTERFACE NvAPI_D3D12_FlushRaytracingValidationMessages(
     __in     ID3D12Device5* pDevice);
 
-#endif // defined(__cplusplus) && defined(__d3d12_h__) && defined(__ID3D12Device5_INTERFACE_DEFINED__) && defined(__ID3D12GraphicsCommandList4_INTERFACE_DEFINED__)
+#endif // defined(__d3d12_h__) && defined(__ID3D12Device5_INTERFACE_DEFINED__) && defined(__ID3D12GraphicsCommandList4_INTERFACE_DEFINED__)
 
 //! SUPPORTED OS:  Windows 10 and higher
 //!
