@@ -76,7 +76,7 @@ NvAPI_Status AllocateAndGetDisplayConfig(NvU32* pathInfoCount, NV_DISPLAYCONFIG_
     if (ret != NVAPI_OK)    return ret;
 
     pathInfo = (NV_DISPLAYCONFIG_PATH_INFO*) malloc(pathCount * sizeof(NV_DISPLAYCONFIG_PATH_INFO));
-    if (!pathInfo)
+    if (pathInfo)
     {
         return NVAPI_OUT_OF_MEMORY;
     }
