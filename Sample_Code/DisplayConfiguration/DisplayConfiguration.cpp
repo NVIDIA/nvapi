@@ -20,7 +20,6 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
  */
-
 //////////////////////////////////////////////////////////////////////////////////////////
 // @brief:	This sample code checks the current configuration of the displays in the system.
 //			Assuming we have two displays on the system, we shall set the different display
@@ -102,9 +101,11 @@ NvAPI_Status AllocateAndGetDisplayConfig(NvU32* pathInfoCount, NV_DISPLAYCONFIG_
         }
         else
         {
+
 #ifdef NV_DISPLAYCONFIG_PATH_INFO_VER3
 pathInfo[i].sourceModeInfo = (NV_DISPLAYCONFIG_SOURCE_MODE_INFO*) malloc(pathInfo[i].sourceModeInfoCount * sizeof(NV_DISPLAYCONFIG_SOURCE_MODE_INFO));
 #endif
+
         }
         if (pathInfo[i].sourceModeInfo == NULL) { ret = NVAPI_OUT_OF_MEMORY; goto cleanup; }
 
@@ -158,9 +159,7 @@ void ShowCurrentDisplayConfig(void)
 	NV_DISPLAYCONFIG_PATH_INFO *pathInfo	= NULL;
 	NvU32 pathCount							= 0;
 	NV_DISPLAYCONFIG_PATH_INFO *pathInfo1	= NULL;
-	NvU32 nDisplayIds						= 0;
     NvU32 physicalGpuCount					= 0;
-    NV_GPU_DISPLAYIDS* pDisplayIds			= NULL;
     NvPhysicalGpuHandle hPhysicalGpu[NVAPI_MAX_PHYSICAL_GPUS];
 
 	for (NvU32 PhysicalGpuIndex = 0; PhysicalGpuIndex < NVAPI_MAX_PHYSICAL_GPUS; PhysicalGpuIndex++)

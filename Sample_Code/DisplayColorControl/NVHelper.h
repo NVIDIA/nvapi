@@ -20,7 +20,6 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
  */
-
 //////////////////////////////////////////////////////////////////////////////////////////
 // @brief:    This sample code shows how to use the NvAPI NvAPI_Disp_ColorControl to control the color values.
 // @driver support: R304+

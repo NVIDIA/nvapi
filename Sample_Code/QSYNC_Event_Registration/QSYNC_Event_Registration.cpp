@@ -20,7 +20,6 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
  */
-
 ////////////////////////////////////////////////////////////////////////////////////
 // @brief: This is the entry point for the console application.
 //         This program registers QSYNC event to the system.

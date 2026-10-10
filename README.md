@@ -1,6 +1,6 @@
 # NVAPI SDK
 
-NVAPI is NVIDIA's API for accessing GPU and driver features on systems with NVIDIA hardware. This repository contains the public, open-source components of the NVAPI SDK: headers, interface definitions, and libraries (nvapi.lib / nvapi64.lib) for building applications that use NVAPI. The actual NVAPI implementation is provided by the NVIDIA GPU driver installed on the system.
+NVAPI is NVIDIA's API for accessing GPU and driver features on systems with NVIDIA hardware. This repository contains the public, open-source components of the NVAPI SDK: headers, interface definitions, and libraries (nvapi.lib / nvapi64.lib / nvapia64.lib / nvapia64ec.lib ) for building applications that use NVAPI. The actual NVAPI implementation is provided by the NVIDIA GPU driver installed on the system.
 ## Documentation
 
 For detailed information on NVAPI features and usage, see the documentation in the [docs](docs) folder.

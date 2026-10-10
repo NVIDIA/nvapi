@@ -23,8 +23,6 @@
 |*                                                                                                        *|
 |*                                                                                                        *|
 \*********************************************************************************************************/
-
-
 #include "NvApiDriverSettings.h"
 
 EValues_OGL_AA_LINE_GAMMA g_valuesOGL_AA_LINE_GAMMA[OGL_AA_LINE_GAMMA_NUM_VALUES] = 
@@ -796,6 +794,12 @@ EValues_SLI_RENDERING_MODE g_valuesSLI_RENDERING_MODE[SLI_RENDERING_MODE_NUM_VAL
     SLI_RENDERING_MODE_FORCE_AFR_OF_SFR__FALLBACK_3AFR,
 };
 
+EValues_SL_DLSS_OVERRIDE g_valuesSL_DLSS_OVERRIDE[SL_DLSS_OVERRIDE_NUM_VALUES] = 
+{
+    SL_DLSS_OVERRIDE_OFF,
+    SL_DLSS_OVERRIDE_ON,
+};
+
 EValues_VRPRERENDERLIMIT g_valuesVRPRERENDERLIMIT[VRPRERENDERLIMIT_NUM_VALUES] = 
 {
     VRPRERENDERLIMIT_MIN,
@@ -1155,6 +1159,7 @@ SettingDWORDNameString mapSettingDWORD[TOTAL_DWORD_SETTING_NUM] =
     {SLI_PREDEFINED_MODE_ID,               SLI_PREDEFINED_MODE_STRING,                6, (NvU32 *)g_valuesSLI_PREDEFINED_MODE,     SLI_PREDEFINED_MODE_AUTOSELECT},
     {SLI_PREDEFINED_MODE_DX10_ID,          SLI_PREDEFINED_MODE_DX10_STRING,           6, (NvU32 *)g_valuesSLI_PREDEFINED_MODE_DX10, SLI_PREDEFINED_MODE_DX10_AUTOSELECT},
     {SLI_RENDERING_MODE_ID,                SLI_RENDERING_MODE_STRING,                 6, (NvU32 *)g_valuesSLI_RENDERING_MODE,      SLI_RENDERING_MODE_AUTOSELECT},
+    {SL_DLSS_OVERRIDE_ID,                  SL_DLSS_OVERRIDE_STRING,                   2, (NvU32 *)g_valuesSL_DLSS_OVERRIDE,        SL_DLSS_OVERRIDE_OFF},
     {VRPRERENDERLIMIT_ID,                  VRPRERENDERLIMIT_STRING,                   4, (NvU32 *)g_valuesVRPRERENDERLIMIT,        VRPRERENDERLIMIT_DEFAULT},
     {VRRFEATUREINDICATOR_ID,               VRRFEATUREINDICATOR_STRING,                2, (NvU32 *)g_valuesVRRFEATUREINDICATOR,     VRRFEATUREINDICATOR_ENABLED},
     {VRROVERLAYINDICATOR_ID,               VRROVERLAYINDICATOR_STRING,                2, (NvU32 *)g_valuesVRROVERLAYINDICATOR,     VRROVERLAYINDICATOR_ENABLED},
