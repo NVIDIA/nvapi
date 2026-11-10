@@ -25,7 +25,7 @@
 \*********************************************************************************************************/
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
-// Date: Sep 2, 2026 
+// Date: Oct 29, 2026 
 // File: nvapi.h
 //
 // NvAPI provides an interface to NVIDIA devices. This file contains the
@@ -3327,6 +3327,7 @@ typedef NV_COMPUTE_GPU_TOPOLOGY_V2 NV_COMPUTE_GPU_TOPOLOGY;
 //
 //! DESCRIPTION:   This API enumerates one or more compute-capable GPUs.
 //!                Note that this API is deprecated and should no longer be used for new software development.
+//!                PhysX flags and recommendations are reported only for WDDM GPUs.
 //! \deprecated  Do not use this function - it is deprecated in release 319.
 //! SUPPORTED OS:  Windows 10 and higher
 //!
@@ -9185,6 +9186,11 @@ typedef NV_GET_ADAPTIVE_SYNC_DATA_V1  NV_GET_ADAPTIVE_SYNC_DATA;
 //! \return  This API can return any of the error codes enumerated in
 //!          #NvAPI_Status. If there are return error codes with specific
 //!          meaning for this API, they are listed below.
+//!
+//! \retval  NVAPI_INVALID_POINTER              pAdaptiveSyncData is NULL.
+//! \retval  NVAPI_INVALID_ARGUMENT             The display could not be mapped to an active display head.
+//! \retval  NVAPI_NVIDIA_DEVICE_NOT_FOUND      The display is disconnected or its GPU is unavailable.
+//! \retval  NVAPI_DATA_NOT_FOUND               No valid application flip data is currently available.
 //!
 //! \endcode
 ///////////////////////////////////////////////////////////////////////////////
@@ -19190,15 +19196,35 @@ typedef enum _NVAPI_D3D12_RAYTRACING_LINEAR_SWEPT_SPHERES_CAP
 //! \ingroup dx
 typedef enum _NVAPI_D3D12_RAYTRACING_CAPS_TYPE
 {
-    NVAPI_D3D12_RAYTRACING_CAPS_TYPE_THREAD_REORDERING      =  0,
-    NVAPI_D3D12_RAYTRACING_CAPS_TYPE_OPACITY_MICROMAP       =  1,
-    NVAPI_D3D12_RAYTRACING_CAPS_TYPE_DISPLACEMENT_MICROMAP  =  2,
-    NVAPI_D3D12_RAYTRACING_CAPS_TYPE_CLUSTER_OPERATIONS     =  3,
-    NVAPI_D3D12_RAYTRACING_CAPS_TYPE_PARTITIONED_TLAS       =  4,
-    NVAPI_D3D12_RAYTRACING_CAPS_TYPE_SPHERES                =  5,
-    NVAPI_D3D12_RAYTRACING_CAPS_TYPE_LINEAR_SWEPT_SPHERES   =  6,
-    NVAPI_D3D12_RAYTRACING_CAPS_TYPE_INVALID                = -1
+    NVAPI_D3D12_RAYTRACING_CAPS_TYPE_THREAD_REORDERING                 =  0,
+    NVAPI_D3D12_RAYTRACING_CAPS_TYPE_OPACITY_MICROMAP                  =  1,
+    NVAPI_D3D12_RAYTRACING_CAPS_TYPE_DISPLACEMENT_MICROMAP             =  2,
+    NVAPI_D3D12_RAYTRACING_CAPS_TYPE_CLUSTER_OPERATIONS                =  3,
+    NVAPI_D3D12_RAYTRACING_CAPS_TYPE_PARTITIONED_TLAS                  =  4,
+    NVAPI_D3D12_RAYTRACING_CAPS_TYPE_SPHERES                           =  5,
+    NVAPI_D3D12_RAYTRACING_CAPS_TYPE_LINEAR_SWEPT_SPHERES              =  6,
+    NVAPI_D3D12_RAYTRACING_CAPS_TYPE_SHADER_IDENTIFIER_CAPTURE_REPLAY  =  7,
+    NVAPI_D3D12_RAYTRACING_CAPS_TYPE_INVALID                           = -1
 } NVAPI_D3D12_RAYTRACING_CAPS_TYPE;
+
+//! Raytracing shader identifier capture/replay support flags.
+//! \ingroup dx
+typedef enum _NVAPI_D3D12_RAYTRACING_SHADER_IDENTIFIER_CAPTURE_REPLAY_CAPS
+{
+    NVAPI_D3D12_RAYTRACING_SHADER_IDENTIFIER_CAPTURE_REPLAY_CAPS_NONE     = 0x0,       //!< Shader identifier capture/replay is not available.
+    NVAPI_D3D12_RAYTRACING_SHADER_IDENTIFIER_CAPTURE_REPLAY_CAPS_STANDARD = NV_BIT(0)  //!< Shader identifier capture/replay is available.
+} NVAPI_D3D12_RAYTRACING_SHADER_IDENTIFIER_CAPTURE_REPLAY_CAPS;
+
+//! Raytracing shader identifier capture/replay capability data.
+//! \ingroup dx
+typedef struct _NVAPI_D3D12_RAYTRACING_SHADER_IDENTIFIER_CAPTURE_REPLAY_CAPS_DATA
+{
+    NVAPI_D3D12_RAYTRACING_SHADER_IDENTIFIER_CAPTURE_REPLAY_CAPS caps; //!< [out] Supported capture/replay capability flags.
+    size_t maxDataSize;                                                //!< [out] Maximum opaque data size for one shader identifier replay record.
+    size_t dataAlignment;                                              //!< [out] Required alignment for opaque data buffers.
+    NvU32  maxRecordsPerIdentifier;                                    //!< [out] Maximum capture/replay records represented by one shader identifier.
+    NvU32  reserved;                                                   //!< Reserved for future use. Must be 0.
+} NVAPI_D3D12_RAYTRACING_SHADER_IDENTIFIER_CAPTURE_REPLAY_CAPS_DATA;
 
 ///////////////////////////////////////////////////////////////////////////////
 //
@@ -19231,6 +19257,98 @@ NVAPI_INTERFACE NvAPI_D3D12_GetRaytracingCaps(
     __out   void* pData,
     __in    size_t dataSize);
 #endif // defined(__cplusplus) && defined(__d3d12_h__)
+
+#if defined(__cplusplus) && defined(__d3d12_h__) && defined(__ID3D12Device5_INTERFACE_DEFINED__)
+//! Replay data for one DXR shader identifier export.
+//! \ingroup dx
+typedef struct _NVAPI_D3D12_RAYTRACING_SHADER_IDENTIFIER_REPLAY_RECORD
+{
+    LPCWSTR     pExportName; //!< [in] Export name whose replay data should be applied.
+    const void* pData;       //!< [in] Opaque capture/replay data returned by NvAPI_D3D12_GetRaytracingShaderIdentifierCaptureReplayData.
+    size_t      dataSize;    //!< [in] Size in bytes of pData.
+    NvU32       reserved;    //!< Reserved for future use. Must be 0.
+} NVAPI_D3D12_RAYTRACING_SHADER_IDENTIFIER_REPLAY_RECORD;
+
+//! Replay data set used while creating a DXR state object.
+//! \ingroup dx
+typedef struct _NVAPI_D3D12_RAYTRACING_SHADER_IDENTIFIER_REPLAY_DESC
+{
+    size_t structSize;                                                        //!< [in]  Size of this structure.
+    NvU32  numRecords;                                                        //!< [in]  Number of entries in pRecords.
+    const NVAPI_D3D12_RAYTRACING_SHADER_IDENTIFIER_REPLAY_RECORD* pRecords;   //!< [in]  Per-export replay records.
+    NvU32  reserved;                                                          //!< Reserved for future use. Must be 0.
+} NVAPI_D3D12_RAYTRACING_SHADER_IDENTIFIER_REPLAY_DESC;
+
+#define NVAPI_D3D12_RAYTRACING_SHADER_IDENTIFIER_REPLAY_DESC_STRUCT_SIZE \
+    NVAPI_STRUCT_SIZE(NVAPI_D3D12_RAYTRACING_SHADER_IDENTIFIER_REPLAY_DESC, reserved)
+
+//! Parameters for querying shader identifier capture/replay data from a DXR state object.
+//! \ingroup dx
+typedef struct _NVAPI_D3D12_GET_RAYTRACING_SHADER_IDENTIFIER_CAPTURE_REPLAY_DATA_PARAMS
+{
+    size_t structSizeIn;                    //!< [in]  Caller's version of this structure.
+    size_t structSizeOut;                   //!< [out] Driver's version of this structure.
+    ID3D12Device* pDevice;                  //!< [in]  D3D12 device that owns pStateObject.
+    struct ID3D12StateObject* pStateObject; //!< [in]  DXR state object to query.
+    LPCWSTR pExportName;                    //!< [in]  Export name whose shader identifier replay data should be queried.
+    size_t dataSizeIn;                      //!< [in]  Size in bytes of pData. May be 0 to query the required size.
+    size_t dataSizeOut;                     //!< [out] Required or written opaque data size in bytes.
+    void*  pData;                           //!< [out] Optional output buffer for opaque capture/replay data.
+    NvU32  reserved;                        //!< Reserved for future use. Must be 0.
+} NVAPI_D3D12_GET_RAYTRACING_SHADER_IDENTIFIER_CAPTURE_REPLAY_DATA_PARAMS;
+
+#define NVAPI_D3D12_GET_RAYTRACING_SHADER_IDENTIFIER_CAPTURE_REPLAY_DATA_PARAMS_STRUCT_SIZE \
+    NVAPI_STRUCT_SIZE(NVAPI_D3D12_GET_RAYTRACING_SHADER_IDENTIFIER_CAPTURE_REPLAY_DATA_PARAMS, reserved)
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// FUNCTION NAME: NvAPI_D3D12_GetRaytracingShaderIdentifierCaptureReplayData
+//
+//! DESCRIPTION: Query opaque replay data for a DXR shader identifier export.
+//!
+//! SUPPORTED OS:  Windows 10 and higher
+//!
+//!
+//! \since Release: 615
+//!
+//! \param [in/out] pParams  Parameters that describe the state object export and receive opaque replay data.
+//!
+//! \return This API can return any of the error codes enumerated in #NvAPI_Status.
+//!
+//! \ingroup dx
+///////////////////////////////////////////////////////////////////////////////
+NVAPI_INTERFACE NvAPI_D3D12_GetRaytracingShaderIdentifierCaptureReplayData(
+    __inout NVAPI_D3D12_GET_RAYTRACING_SHADER_IDENTIFIER_CAPTURE_REPLAY_DATA_PARAMS* pParams);
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// FUNCTION NAME: NvAPI_D3D12_CreateStateObjectWithShaderIdentifierCaptureReplay
+//
+//! DESCRIPTION: Create a DXR state object while applying opaque shader identifier replay data.
+//!
+//! SUPPORTED OS:  Windows 10 and higher
+//!
+//!
+//! \since Release: 615
+//!
+//! \param [in]  pDevice       D3D12 device used to create the state object.
+//! \param [in]  pDesc         State object description passed to ID3D12Device5::CreateStateObject.
+//! \param [in]  pReplayDesc   Optional per-export shader identifier replay data.
+//! \param [in]  riid          Interface ID requested from CreateStateObject.
+//! \param [out] ppStateObject Returned state object interface.
+//!
+//! \return This API can return any of the error codes enumerated in #NvAPI_Status.
+//!
+//! \ingroup dx
+///////////////////////////////////////////////////////////////////////////////
+NVAPI_INTERFACE NvAPI_D3D12_CreateStateObjectWithShaderIdentifierCaptureReplay(
+    __in     ID3D12Device5* pDevice,
+    __in     const struct D3D12_STATE_OBJECT_DESC* pDesc,
+    __in_opt const NVAPI_D3D12_RAYTRACING_SHADER_IDENTIFIER_REPLAY_DESC* pReplayDesc,
+    __in     REFIID riid,
+    __out    void** ppStateObject);
+
+#endif // defined(__cplusplus) && defined(__d3d12_h__) && defined(__ID3D12Device5_INTERFACE_DEFINED__)
 
 #if defined(__cplusplus) && defined(__d3d12_h__) && defined(__ID3D12Device5_INTERFACE_DEFINED__) && defined(__ID3D12GraphicsCommandList4_INTERFACE_DEFINED__)
 
@@ -24400,7 +24518,8 @@ typedef enum _NVDRS_SETTING_TYPE
      NVDRS_BINARY_TYPE,
      NVDRS_STRING_TYPE,
      NVDRS_WSTRING_TYPE,
-     NVDRS_QWORD_TYPE
+     NVDRS_QWORD_TYPE,
+     NVDRS_FLOAT_TYPE
 } NVDRS_SETTING_TYPE;
 
 typedef enum _NVDRS_SETTING_LOCATION
@@ -24468,6 +24587,7 @@ typedef struct _NVDRS_SETTING_VALUES
                                                         //!< Must be allocated by caller with valueLength specifying buffer size, or only valueLength will be filled in.
          NvAPI_UnicodeString        wszDefaultValue;    //!< Accessing default unicode string value of this setting.
          NvU64                      u64DefaultValue;    //!< Accessing default QWORD value of this setting.
+         NvF32                      f32DefaultValue;    //!< Accessing default FLOAT value of this setting.
      };
      union                                                //!< Setting values can be of either DWORD, Binary values, String or QWORD type,
      {                                                    //!< NOT mixed types.
@@ -24475,6 +24595,7 @@ typedef struct _NVDRS_SETTING_VALUES
          NVDRS_BINARY_SETTING       binaryValue;        //!< All possible Binary values for a setting
          NvAPI_UnicodeString        wszValue;           //!< Accessing current unicode string value of this setting.
          NvU64                      u64Value;           //!< All possible QWORD values for a setting
+         NvF32                      f32Value;           //!< All possible FLOAT values for a setting
      }settingValues[NVAPI_SETTING_MAX_VALUES];
 } NVDRS_SETTING_VALUES;
 #pragma pack(pop)
@@ -24501,6 +24622,7 @@ typedef struct _NVDRS_SETTING_V1
                                                            //!< or only valueLength will be filled in.
          NvAPI_UnicodeString        wszPredefinedValue;    //!< Accessing default unicode string value of this setting.
          NvU64                      u64PredefinedValue;    //!< Accessing default QWORD value of this setting.
+         NvF32                      f32PredefinedValue;    //!< Accessing predefined FLOAT value of this setting.
      };
      union                                              //!< Setting can hold either DWORD or Binary value or string or QWORD. Not mixed types.
      {
@@ -24510,6 +24632,7 @@ typedef struct _NVDRS_SETTING_V1
                                                         //!< or only valueLength will be filled in.
          NvAPI_UnicodeString        wszCurrentValue;    //!< Accessing current unicode string value of this setting.
          NvU64                      u64CurrentValue;    //!< Accessing current QWORD value of this setting.
+         NvF32                      f32CurrentValue;    //!< Accessing current FLOAT value of this setting.
      };                                                 
 } NVDRS_SETTING_V1;
 #pragma pack(pop)

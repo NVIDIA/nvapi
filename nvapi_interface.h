@@ -401,6 +401,8 @@ struct NVAPI_INTERFACE_TABLE nvapi_interface_table[] =
     { "NvAPI_D3D11_GetCudaTextureObject", 0x9006fa68 },
     { "NvAPI_D3D11_GetResourceGPUVirtualAddress", 0x1819b423 },
     { "NvAPI_D3D12_GetRaytracingCaps", 0x85a6c2a0 },
+    { "NvAPI_D3D12_GetRaytracingShaderIdentifierCaptureReplayData", 0xfa998e93 },
+    { "NvAPI_D3D12_CreateStateObjectWithShaderIdentifierCaptureReplay", 0xe6d0011d },
     { "NvAPI_D3D12_EnableRaytracingValidation", 0x1de5991b },
     { "NvAPI_D3D12_RegisterRaytracingValidationMessageCallback", 0x8554eb38 },
     { "NvAPI_D3D12_UnregisterRaytracingValidationMessageCallback", 0x26975da6 },
